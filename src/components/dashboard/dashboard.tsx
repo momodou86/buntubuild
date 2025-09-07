@@ -29,8 +29,8 @@ export function Dashboard() {
   );
 
   const monthsRemaining = targetDate
-    ? differenceInMonths(targetDate, new Date())
-    : 0;
+    ? differenceInMonths(targetDate, new Date()) + 1
+    : 1;
   const projectedSavings =
     currentSavings + monthlyContribution * Math.max(0, monthsRemaining);
   const onTrack = projectedSavings >= savingsGoal;
