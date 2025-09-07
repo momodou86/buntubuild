@@ -31,7 +31,7 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
-import { DollarSign, Upload, Users, Send, PlusCircle, Trash2 } from 'lucide-react';
+import { Upload, Users, Send, PlusCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Separator } from '../ui/separator';
@@ -60,6 +60,15 @@ const jointMembers = [
     { name: 'Awa Njie', avatar: 'https://picsum.photos/id/239/40', dataAiHint: 'woman portrait', contribution: 75000, role: 'Contributor' },
     { name: 'Lamin Touray', avatar: 'https://picsum.photos/id/240/40', dataAiHint: 'man portrait', contribution: 50000, role: 'Viewer' },
 ]
+
+const CurrencySymbol: FC<{ currency: Currency, className?: string }> = ({ currency, className }) => {
+  const symbols = {
+    GMD: 'D',
+    USD: '$',
+    GBP: '£',
+  };
+  return <span className={className}>{symbols[currency]}</span>;
+};
 
 export const QuickActions: FC<QuickActionsProps> = ({ onTopUp, currency }) => {
   const { toast } = useToast();
@@ -107,7 +116,7 @@ export const QuickActions: FC<QuickActionsProps> = ({ onTopUp, currency }) => {
                 render={({ field }) => (
                   <FormItem>
                     <div className="relative">
-                      <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <CurrencySymbol currency={currency} className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <FormControl>
                         <Input
                           type="number"

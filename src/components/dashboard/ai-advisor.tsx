@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Lightbulb, Loader2, ServerCrash, DollarSign, BrainCircuit } from 'lucide-react';
+import { Lightbulb, Loader2, ServerCrash, BrainCircuit } from 'lucide-react';
 import { getAISuggestion } from '@/app/actions';
 import { useState } from 'react';
 import type { SuggestOptimalContributionOutput } from '@/ai/flows/suggest-optimal-contributions';
@@ -43,6 +43,16 @@ interface AiAdvisorProps {
   targetDate?: Date;
   currency: Currency;
 }
+
+const CurrencySymbol: FC<{ currency: Currency, className?: string }> = ({ currency, className }) => {
+  const symbols = {
+    GMD: 'D',
+    USD: '$',
+    GBP: '£',
+  };
+  return <span className={className}>{symbols[currency]}</span>;
+};
+
 
 export const AiAdvisor: FC<AiAdvisorProps> = ({
   savingsGoal,
@@ -124,7 +134,7 @@ export const AiAdvisor: FC<AiAdvisorProps> = ({
                 <FormItem>
                   <FormLabel>Your Monthly Income ({currency})</FormLabel>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <CurrencySymbol currency={currency} className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <FormControl>
                       <Input
                         type="number"

@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { DatePicker } from '@/components/ui/date-picker';
-import { DollarSign, Trash2, PlusCircle, RefreshCw, Layers } from 'lucide-react';
+import { Trash2, PlusCircle, RefreshCw, Layers } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import type { Currency } from './dashboard';
@@ -79,6 +79,15 @@ const goalTemplates = [
     goals: [{ id: 'custom1', name: 'My First Goal', amount: 100000 }],
   },
 ];
+
+const CurrencySymbol: FC<{ currency: Currency, className?: string }> = ({ currency, className }) => {
+  const symbols = {
+    GMD: 'D',
+    USD: '$',
+    GBP: '£',
+  };
+  return <span className={className}>{symbols[currency]}</span>;
+};
 
 
 export const GoalSettings: FC<GoalSettingsProps> = ({
@@ -187,7 +196,7 @@ export const GoalSettings: FC<GoalSettingsProps> = ({
                     render={({ field }) => (
                       <FormItem className="w-48">
                         <div className="relative">
-                           <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <CurrencySymbol currency={currency} className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                            <FormControl>
                               <Input type="number" placeholder="Amount" {...field} className="pl-10" />
                            </FormControl>
