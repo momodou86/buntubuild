@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -68,11 +69,9 @@ export function SignIn() {
         switch (err.code) {
           case 'auth/user-not-found':
           case 'auth/wrong-password':
+          case 'auth/invalid-credential':
             message = 'Invalid email or password. Please try again.';
             break;
-          case 'auth/invalid-credential':
-             message = 'Invalid credentials. Please check your email and password.';
-             break;
           default:
              message = `An error occurred: ${err.message}`;
         }
