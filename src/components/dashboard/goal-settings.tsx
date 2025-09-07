@@ -126,6 +126,17 @@ export const GoalSettings: FC<GoalSettingsProps> = ({
       maximumFractionDigits: 0,
     }).format(amount);
   };
+
+  const calculateContribution = () => {
+    const target = form.getValues('targetDate');
+     if (target) {
+      const monthsRemaining = differenceInMonths(target, new Date()) + 1;
+      if (monthsRemaining > 0) {
+        const requiredMonthly = Math.max(0, (totalGoal - currentSavings) / monthsRemaining);
+        form.setValue('monthlyContribution', Math.ceil(requiredMonthly));
+      }
+    }
+  }
   
   useEffect(() => {
     form.reset({
@@ -136,13 +147,7 @@ export const GoalSettings: FC<GoalSettingsProps> = ({
   }, [goals, monthlyContribution, targetDate, form]);
 
   useEffect(() => {
-    if (watchedTargetDate) {
-      const monthsRemaining = differenceInMonths(watchedTargetDate, new Date()) + 1;
-      if (monthsRemaining > 0) {
-        const requiredMonthly = Math.max(0, (totalGoal - currentSavings) / monthsRemaining);
-        form.setValue('monthlyContribution', Math.ceil(requiredMonthly));
-      }
-    }
+    calculateContribution();
   }, [totalGoal, watchedTargetDate, currentSavings, form]);
 
   const onSubmit = (data: GoalFormData) => {
@@ -257,7 +262,9 @@ export const GoalSettings: FC<GoalSettingsProps> = ({
                     <FormItem>
                       <FormLabel>Automated Monthly Contribution ({currency})</FormLabel>
                       <div className="relative">
-                        <RefreshCw className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Button type="button" variant="ghost" size="icon" className="absolute left-1 top-1/2 -translate-y-1/2 h-8 w-8" onClick={calculateContribution}>
+                          <RefreshCw className="h-4 w-4 text-muted-foreground" />
+                        </Button>
                         <FormControl>
                           <Input type="number" placeholder="e.g., 75,000" {...field} className="pl-10"/>
                         </FormControl>
