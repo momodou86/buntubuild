@@ -258,7 +258,13 @@ export const GoalSettings: FC<GoalSettingsProps> = ({
                   <FormItem className="flex flex-col">
                     <FormLabel>Target Build Start Date</FormLabel>
                     <FormControl>
-                      <DatePicker date={field.value} setDate={field.onChange} />
+                      <DatePicker
+                        date={field.value}
+                        setDate={field.onChange}
+                        captionLayout="dropdown-buttons"
+                        fromYear={new Date().getFullYear()}
+                        toYear={new Date().getFullYear() + 20}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

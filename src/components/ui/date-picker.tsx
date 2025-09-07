@@ -17,9 +17,20 @@ type DatePickerProps = {
   date: Date | undefined;
   setDate: (date: Date | undefined) => void;
   className?: string;
+  captionLayout?: 'dropdown' | 'buttons' | 'dropdown-buttons';
+  fromYear?: number;
+  toYear?: number;
 };
 
-export function DatePicker({ date, setDate, className }: DatePickerProps) {
+export function DatePicker({
+  date,
+  setDate,
+  className,
+  captionLayout,
+  fromYear,
+  toYear,
+}: DatePickerProps) {
+  const currentYear = new Date().getFullYear();
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -42,6 +53,9 @@ export function DatePicker({ date, setDate, className }: DatePickerProps) {
           onSelect={setDate}
           initialFocus
           disabled={(date) => date < new Date()}
+          captionLayout={captionLayout}
+          fromYear={fromYear || currentYear - 100}
+          toYear={toYear || currentYear + 10}
         />
       </PopoverContent>
     </Popover>
