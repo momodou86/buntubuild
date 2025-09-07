@@ -14,9 +14,14 @@ import {
   Milestone,
   CheckCircle2,
   Circle,
+  Lock,
+  Info
 } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
+import { Switch } from '../ui/switch';
+import { Label } from '../ui/label';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
 const milestones = [
   { name: 'Land Title Verification', completed: true, amount: 250000 },
@@ -29,6 +34,7 @@ export function EscrowAccount() {
   const escrowTotal = milestones
     .filter((m) => m.completed)
     .reduce((sum, m) => sum + m.amount, 0);
+  const isLocked = true;
 
   return (
     <Card className="shadow-lg rounded-xl">
@@ -55,6 +61,29 @@ export function EscrowAccount() {
           </div>
           <FileText className="h-6 w-6 text-muted-foreground" />
         </div>
+        
+        <div className="p-4 rounded-lg bg-muted/50">
+            <div className="flex items-center justify-between">
+                <Label htmlFor="withdrawal-lock" className="flex items-center gap-2 font-semibold">
+                    <Lock className="h-5 w-5" />
+                    <span>Withdrawal Lock</span>
+                </Label>
+                <div className="flex items-center gap-2">
+                    <Switch id="withdrawal-lock" checked={isLocked} aria-readonly />
+                     <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger>
+                                <Info className="h-4 w-4 text-muted-foreground" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p className="max-w-xs">Funds are locked until milestones are met. An emergency unlock requires admin review.</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                </div>
+            </div>
+        </div>
+        
         <div>
           <h4 className="text-md font-semibold mb-2 flex items-center gap-2">
             <Milestone className="h-5 w-5" />

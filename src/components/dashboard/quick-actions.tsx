@@ -31,8 +31,11 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
-import { DollarSign, Upload, Users, Send } from 'lucide-react';
+import { DollarSign, Upload, Users, Send, PlusCircle, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Separator } from '../ui/separator';
+import { Label } from '../ui/label';
 
 const topUpSchema = z.object({
   amount: z.coerce.number().min(500, 'Top-up must be at least 500.'),
@@ -43,6 +46,11 @@ type TopUpFormData = z.infer<typeof topUpSchema>;
 interface QuickActionsProps {
   onTopUp: (amount: number) => void;
 }
+
+const jointMembers = [
+    { name: 'Awa Njie', avatar: 'https://picsum.photos/id/239/40', dataAiHint: 'woman portrait', contribution: 75000 },
+    { name: 'Lamin Touray', avatar: 'https://picsum.photos/id/240/40', dataAiHint: 'man portrait', contribution: 50000 },
+]
 
 export const QuickActions: FC<QuickActionsProps> = ({ onTopUp }) => {
   const { toast } = useToast();
@@ -112,16 +120,51 @@ export const QuickActions: FC<QuickActionsProps> = ({ onTopUp }) => {
                 Manage Joint Savings
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>Joint Savings Members</DialogTitle>
                 <DialogDescription>
-                  Invite family members to contribute to your goal. This feature is coming soon!
+                  Invite and manage family members contributing to this goal.
                 </DialogDescription>
               </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-3">
+                    <Label>Current Members</Label>
+                    {jointMembers.map(member => (
+                        <div key={member.name} className="flex items-center justify-between p-2 rounded-lg bg-muted/50">
+                            <div className="flex items-center gap-3">
+                                <Avatar>
+                                    <AvatarImage src={member.avatar} alt={member.name} data-ai-hint={member.dataAiHint} />
+                                    <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <p className="font-semibold">{member.name}</p>
+                                    <p className="text-sm text-muted-foreground">
+                                        Total: GMD {member.contribution.toLocaleString()}
+                                    </p>
+                                </div>
+                            </div>
+                            <Button variant="ghost" size="icon">
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                        </div>
+                    ))}
+                </div>
+                <Separator />
+                <div className="space-y-3">
+                    <Label htmlFor="invite-email">Invite New Member</Label>
+                    <div className="flex gap-2">
+                        <Input id="invite-email" type="email" placeholder="Enter email address" />
+                        <Button>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Invite
+                        </Button>
+                    </div>
+                </div>
+              </div>
               <DialogFooter>
                 <DialogClose asChild>
-                  <Button>Close</Button>
+                  <Button variant="outline">Close</Button>
                 </DialogClose>
               </DialogFooter>
             </DialogContent>
