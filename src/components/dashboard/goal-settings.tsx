@@ -27,6 +27,7 @@ import { DollarSign, Trash2, PlusCircle, RefreshCw, Layers } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import type { Currency } from './dashboard';
+import { useEffect } from 'react';
 
 const goalItemSchema = z.object({
   id: z.string(),
@@ -111,6 +112,14 @@ export const GoalSettings: FC<GoalSettingsProps> = ({
       maximumFractionDigits: 0,
     }).format(amount);
   };
+  
+  useEffect(() => {
+    form.reset({
+      goals,
+      monthlyContribution,
+      targetDate,
+    });
+  }, [goals, monthlyContribution, targetDate, form]);
 
   const onSubmit = (data: GoalFormData) => {
     onUpdate(data);
