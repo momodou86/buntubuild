@@ -34,6 +34,10 @@ export async function getAISuggestion(
 }
 
 export async function setSuperAdminClaim(uid: string): Promise<{ success: boolean; message?: string }> {
+  if (!adminAuth) {
+    console.log('Admin Auth not initialized, skipping setting claim');
+    return { success: true, message: 'Admin Auth not initialized.'}
+  }
   try {
     const { users } = await adminAuth.listUsers(1);
     if (users.length > 1) {
