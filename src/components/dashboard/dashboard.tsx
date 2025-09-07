@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { addMonths, differenceInMonths } from 'date-fns';
+import { differenceInMonths } from 'date-fns';
 import { Header } from '@/components/dashboard/header';
 import { ProgressSummary } from '@/components/dashboard/progress-summary';
 import { GoalSettings } from '@/components/dashboard/goal-settings';
@@ -12,43 +12,44 @@ import { Achievements } from '@/components/dashboard/achievements';
 import { CommunityFeed } from '@/components/dashboard/community-feed';
 import { EscrowAccount } from './escrow-account';
 import type { Goal } from '@/components/dashboard/goal-settings';
-import { useAuth } from '@/hooks/use-auth';
 import { getUserProfile, updateUserCurrency } from '@/lib/firestore';
 import type { UserProfile, Transaction } from '@/lib/firestore';
-import { getTransactions, addTransaction } from '@/lib/firestore';
+import { getTransactions } from '@/lib/firestore';
 import { addTransactionAction, handleGoalUpdateAction } from '@/app/actions';
+import type { User } from 'firebase/auth';
 
 export type Currency = 'GMD' | 'USD' | 'GBP';
 
-export function Dashboard() {
-  const { user } = useAuth();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+interface DashboardProps {
+  user: User;
+  profile: UserProfile;
+}
+
+export function Dashboard({ user, profile: initialProfile }: DashboardProps) {
+  const [profile, setProfile] = useState<UserProfile>(initialProfile);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchData() {
+    async function fetchTransactions() {
       if (user) {
         setLoading(true);
-        const userProfile = await getUserProfile(user.uid);
-        if (userProfile) {
-          setProfile(userProfile);
-          const userTransactions = await getTransactions(user.uid);
-          setTransactions(userTransactions);
-        }
+        const userTransactions = await getTransactions(user.uid);
+        setTransactions(userTransactions);
         setLoading(false);
       }
     }
-    fetchData();
+    fetchTransactions();
   }, [user]);
-  
-  if (loading || !profile) {
-     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <p>Loading your dashboard...</p>
-      </div>
-    );
-  }
+
+  const refreshProfile = async () => {
+    if (user) {
+      const updatedProfile = await getUserProfile(user.uid);
+      if (updatedProfile) {
+        setProfile(updatedProfile);
+      }
+    }
+  };
 
   const {
     goals,
@@ -75,8 +76,7 @@ export function Dashboard() {
   }) => {
     if (user) {
       await handleGoalUpdateAction(user.uid, data);
-      const updatedProfile = await getUserProfile(user.uid);
-      if (updatedProfile) setProfile(updatedProfile);
+      await refreshProfile();
     }
   };
 
@@ -88,19 +88,25 @@ export function Dashboard() {
         amount: amount,
         date: new Date(),
       });
-      const updatedProfile = await getUserProfile(user.uid);
-       if (updatedProfile) setProfile(updatedProfile);
+      await refreshProfile();
       const userTransactions = await getTransactions(user.uid);
       setTransactions(userTransactions);
     }
   };
-  
+
   const handleSetCurrency = async (newCurrency: Currency) => {
-      if(user) {
-          await updateUserCurrency(user.uid, newCurrency);
-          const updatedProfile = await getUserProfile(user.uid);
-          if (updatedProfile) setProfile(updatedProfile);
-      }
+    if (user) {
+      await updateUserCurrency(user.uid, newCurrency);
+      await refreshProfile();
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <p>Loading transactions...</p>
+      </div>
+    );
   }
 
   return (
