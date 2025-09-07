@@ -48,6 +48,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import type { Currency } from './dashboard';
 import React, { type FC, useState, useCallback } from 'react';
+import { ScrollArea } from '../ui/scroll-area';
 
 
 const milestones = [
@@ -69,15 +70,13 @@ interface EscrowAccountProps {
   currency: Currency;
 }
 
-const FileUploadArea: FC<{ onFilesChange: (files: File[]) => void }> = ({ onFilesChange }) => {
-  const [files, setFiles] = useState<File[]>([]);
+const FileUploadArea: FC<{ onFilesChange: (files: File[]) => void, files: File[] }> = ({ onFilesChange, files }) => {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleFileChange = (newFiles: FileList | null) => {
     if (newFiles) {
       const updatedFiles = [...files, ...Array.from(newFiles)];
-      setFiles(updatedFiles);
       onFilesChange(updatedFiles);
     }
   };
@@ -111,7 +110,6 @@ const FileUploadArea: FC<{ onFilesChange: (files: File[]) => void }> = ({ onFile
 
   const removeFile = (index: number) => {
     const updatedFiles = files.filter((_, i) => i !== index);
-    setFiles(updatedFiles);
     onFilesChange(updatedFiles);
   };
 
@@ -174,9 +172,9 @@ const FileUploadArea: FC<{ onFilesChange: (files: File[]) => void }> = ({ onFile
 
 
 export const EscrowAccount: FC<EscrowAccountProps> = ({ currency }) => {
-  const isLocked = true;
   const { toast } = useToast();
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
+  const [isLocked, setIsLocked] = useState(true);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -200,6 +198,7 @@ export const EscrowAccount: FC<EscrowAccountProps> = ({ currency }) => {
         description: `Verification documents for "${milestoneName}" have been submitted for review.`,
         className: 'bg-primary text-primary-foreground',
     });
+    setAttachedFiles([]);
   }
 
   return (
@@ -238,7 +237,7 @@ export const EscrowAccount: FC<EscrowAccountProps> = ({ currency }) => {
               <span>Withdrawal Lock</span>
             </Label>
             <div className="flex items-center gap-2">
-              <Switch id="withdrawal-lock" checked={isLocked} aria-readonly />
+              <Switch id="withdrawal-lock" checked={isLocked} onCheckedChange={setIsLocked} />
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger>
@@ -286,7 +285,7 @@ export const EscrowAccount: FC<EscrowAccountProps> = ({ currency }) => {
                   </p>
                 </div>
                  {!milestone.completed && (
-                   <Dialog>
+                   <Dialog onOpenChange={() => setAttachedFiles([])}>
                     <DialogTrigger asChild>
                         <Button variant="secondary" size="sm" disabled={!milestone.ready}>Request Release</Button>
                     </DialogTrigger>
@@ -298,7 +297,7 @@ export const EscrowAccount: FC<EscrowAccountProps> = ({ currency }) => {
                             </DialogDescription>
                         </DialogHeader>
                         <div className="py-4">
-                           <FileUploadArea onFilesChange={setAttachedFiles} />
+                           <FileUploadArea onFilesChange={setAttachedFiles} files={attachedFiles} />
                         </div>
                         <DialogFooter>
                             <DialogClose asChild>
@@ -327,7 +326,8 @@ export const EscrowAccount: FC<EscrowAccountProps> = ({ currency }) => {
                 Download Statement
             </Button>
           </div>
-           <div className="space-y-3 max-h-48 overflow-y-auto pr-2 rounded-md border p-3">
+           <ScrollArea className="h-48 rounded-md border">
+            <div className="p-3 space-y-3">
                 {auditLog.map((log) => (
                     <div key={log.id} className="flex items-center justify-between text-sm">
                         <div>
@@ -342,6 +342,7 @@ export const EscrowAccount: FC<EscrowAccountProps> = ({ currency }) => {
                     </div>
                 ))}
            </div>
+           </ScrollArea>
         </div>
       </CardContent>
       <CardFooter className="bg-muted/30 px-6 py-4 border-t">
