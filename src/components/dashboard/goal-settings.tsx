@@ -75,44 +75,46 @@ export const GoalSettings: FC<GoalSettingsProps> = ({
       <CardHeader>
         <CardTitle className="font-headline text-3xl">Plan Your Build</CardTitle>
         <CardDescription>
-          Define your goal and we'll help you get there.
+          Define your savings goal and set a target date for your home construction.
         </CardDescription>
       </CardHeader>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
-          <CardContent className="space-y-6">
-            <FormField
-              control={form.control}
-              name="savingsGoal"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Total Savings Goal (GMD)</FormLabel>
-                  <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <FormControl>
-                      <Input type="number" placeholder="e.g., 2,500,000" {...field} className="pl-10"/>
-                    </FormControl>
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="monthlyContribution"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Automated Monthly Contribution (GMD)</FormLabel>
-                   <div className="relative">
-                    <RefreshCw className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <FormControl>
-                      <Input type="number" placeholder="e.g., 75,000" {...field} className="pl-10"/>
-                    </FormControl>
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <CardContent className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-6">
+              <FormField
+                control={form.control}
+                name="savingsGoal"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Total Savings Goal (GMD)</FormLabel>
+                    <div className="relative">
+                      <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <FormControl>
+                        <Input type="number" placeholder="e.g., 2,500,000" {...field} className="pl-10"/>
+                      </FormControl>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="monthlyContribution"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Automated Monthly Contribution (GMD)</FormLabel>
+                    <div className="relative">
+                      <RefreshCw className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <FormControl>
+                        <Input type="number" placeholder="e.g., 75,000" {...field} className="pl-10"/>
+                      </FormControl>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
              <FormField
               control={form.control}
               name="targetDate"

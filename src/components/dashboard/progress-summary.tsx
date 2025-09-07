@@ -69,7 +69,7 @@ export const ProgressSummary: FC<ProgressSummaryProps> = ({
   return (
     <Card className="shadow-lg rounded-xl overflow-hidden">
       <CardHeader className="items-center pb-0">
-        <CardTitle className="font-headline text-3xl">Your Progress</CardTitle>
+        <CardTitle className="font-headline text-3xl">Your Savings Goal</CardTitle>
         <CardDescription>
           Your journey to building your dream home.
         </CardDescription>
