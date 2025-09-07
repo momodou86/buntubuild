@@ -21,11 +21,23 @@ import {
   Info,
   History,
   Download,
+  Upload,
+  Paperclip,
 } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import {
   Tooltip,
   TooltipContent,
@@ -37,8 +49,8 @@ import { useToast } from '@/hooks/use-toast';
 const milestones = [
   { name: 'Land Title Verification', completed: true, amount: 250000 },
   { name: 'Foundation Materials', completed: true, amount: 500000 },
-  { name: 'Contractor Draw 1', completed: false, amount: 750000 },
-  { name: 'Roofing Materials', completed: false, amount: 400000 },
+  { name: 'Contractor Draw 1', completed: false, amount: 750000, ready: true },
+  { name: 'Roofing Materials', completed: false, amount: 400000, ready: false },
 ];
 
 const auditLog = [
@@ -57,6 +69,14 @@ export function EscrowAccount() {
     toast({
         title: 'Statement Generated',
         description: 'Your transaction statement has been downloaded.',
+        className: 'bg-primary text-primary-foreground',
+    });
+  }
+
+  const handleReleaseRequest = (milestoneName: string) => {
+     toast({
+        title: 'Release Request Submitted',
+        description: `Verification documents for "${milestoneName}" have been submitted for review.`,
         className: 'bg-primary text-primary-foreground',
     });
   }
@@ -120,9 +140,9 @@ export function EscrowAccount() {
             <Milestone className="h-5 w-5" />
             <span>Milestone-Based Releases</span>
           </h4>
-          <div className="space-y-4">
+          <div className="space-y-2">
             {milestones.map((milestone, index) => (
-              <div key={index} className="flex items-start gap-4">
+              <div key={index} className="flex items-center gap-4 p-2 rounded-lg even:bg-muted/30">
                 <div>
                   {milestone.completed ? (
                     <CheckCircle2 className="h-5 w-5 text-primary" />
@@ -144,6 +164,53 @@ export function EscrowAccount() {
                     GMD {milestone.amount.toLocaleString()}
                   </p>
                 </div>
+                 {!milestone.completed && (
+                   <Dialog>
+                    <DialogTrigger asChild>
+                        <Button variant="secondary" size="sm" disabled={!milestone.ready}>Request Release</Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Request Fund Release: {milestone.name}</DialogTitle>
+                            <DialogDescription>
+                                To release GMD {milestone.amount.toLocaleString()}, please upload verification documents (e.g., invoices, photos).
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="py-4 space-y-4">
+                            <div className="p-6 border-2 border-dashed rounded-lg flex flex-col items-center text-center">
+                                <Upload className="h-10 w-10 text-muted-foreground mb-2" />
+                                <p className="font-semibold">Click or drag files to upload</p>
+                                <p className="text-sm text-muted-foreground">Max file size: 5MB per file</p>
+                            </div>
+                             <div className="space-y-2">
+                                <Label>Attached Files:</Label>
+                                <div className="flex items-center justify-between p-2 text-sm bg-muted/50 rounded-md">
+                                    <div className="flex items-center gap-2">
+                                        <Paperclip className="h-4 w-4" />
+                                        <span>contractor_invoice_q3.pdf</span>
+                                    </div>
+                                    <span className="text-muted-foreground">1.2 MB</span>
+                                </div>
+                                <div className="flex items-center justify-between p-2 text-sm bg-muted/50 rounded-md">
+                                    <div className="flex items-center gap-2">
+                                        <Paperclip className="h-4 w-4" />
+                                        <span>foundation_photo_1.jpg</span>
+                                    </div>
+                                    <span className="text-muted-foreground">2.8 MB</span>
+                                </div>
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <DialogClose asChild>
+                                <Button variant="outline">Cancel</Button>
+                            </DialogClose>
+                            <DialogClose asChild>
+                                <Button onClick={() => handleReleaseRequest(milestone.name)}>Submit for Review</Button>
+                            </DialogClose>
+                        </DialogFooter>
+                    </DialogContent>
+                   </Dialog>
+                )}
               </div>
             ))}
           </div>
@@ -189,5 +256,3 @@ export function EscrowAccount() {
     </Card>
   );
 }
-
-    
