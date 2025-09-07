@@ -36,6 +36,13 @@ import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Separator } from '../ui/separator';
 import { Label } from '../ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const topUpSchema = z.object({
   amount: z.coerce.number().min(500, 'Top-up must be at least 500.'),
@@ -48,8 +55,8 @@ interface QuickActionsProps {
 }
 
 const jointMembers = [
-    { name: 'Awa Njie', avatar: 'https://picsum.photos/id/239/40', dataAiHint: 'woman portrait', contribution: 75000 },
-    { name: 'Lamin Touray', avatar: 'https://picsum.photos/id/240/40', dataAiHint: 'man portrait', contribution: 50000 },
+    { name: 'Awa Njie', avatar: 'https://picsum.photos/id/239/40', dataAiHint: 'woman portrait', contribution: 75000, role: 'Contributor' },
+    { name: 'Lamin Touray', avatar: 'https://picsum.photos/id/240/40', dataAiHint: 'man portrait', contribution: 50000, role: 'Viewer' },
 ]
 
 export const QuickActions: FC<QuickActionsProps> = ({ onTopUp }) => {
@@ -120,7 +127,7 @@ export const QuickActions: FC<QuickActionsProps> = ({ onTopUp }) => {
                 Manage Joint Savings
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle>Joint Savings Members</DialogTitle>
                 <DialogDescription>
@@ -144,9 +151,20 @@ export const QuickActions: FC<QuickActionsProps> = ({ onTopUp }) => {
                                     </p>
                                 </div>
                             </div>
-                            <Button variant="ghost" size="icon">
-                                <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
+                            <div className="flex items-center gap-2">
+                              <Select defaultValue={member.role}>
+                                <SelectTrigger className="w-[130px]">
+                                  <SelectValue placeholder="Select role" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Contributor">Contributor</SelectItem>
+                                  <SelectItem value="Viewer">Viewer</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Button variant="ghost" size="icon">
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
                         </div>
                     ))}
                 </div>
