@@ -32,8 +32,9 @@ export function Dashboard() {
   const [currency, setCurrency] = useState<Currency>('GMD');
 
   const monthsRemaining = targetDate
-    ? differenceInMonths(targetDate, new Date())
+    ? differenceInMonths(targetDate, new Date()) + 1
     : 0;
+
   const projectedSavings =
     currentSavings + monthlyContribution * Math.max(0, monthsRemaining);
   const onTrack = projectedSavings >= savingsGoal;
@@ -72,6 +73,7 @@ export function Dashboard() {
               targetDate={targetDate}
               onUpdate={handleGoalUpdate}
               currency={currency}
+              currentSavings={currentSavings}
             />
             <EscrowAccount currency={currency} />
           </div>

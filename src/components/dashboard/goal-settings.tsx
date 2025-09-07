@@ -28,6 +28,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import type { Currency } from './dashboard';
 import { useEffect } from 'react';
+import { differenceInMonths } from 'date-fns';
 
 const goalItemSchema = z.object({
   id: z.string(),
@@ -49,6 +50,7 @@ type GoalFormData = z.infer<typeof goalSchema>;
 interface GoalSettingsProps {
   goals: Goal[];
   monthlyContribution: number;
+  currentSavings: number;
   targetDate?: Date;
   onUpdate: (data: GoalFormData) => void;
   currency: Currency;
@@ -96,6 +98,7 @@ export const GoalSettings: FC<GoalSettingsProps> = ({
   targetDate,
   onUpdate,
   currency,
+  currentSavings,
 }) => {
   const { toast } = useToast();
   const form = useForm<GoalFormData>({
@@ -112,7 +115,9 @@ export const GoalSettings: FC<GoalSettingsProps> = ({
     name: 'goals',
   });
   
-  const totalGoal = form.watch('goals').reduce((sum, goal) => sum + (Number(goal.amount) || 0), 0);
+  const watchedGoals = form.watch('goals');
+  const watchedTargetDate = form.watch('targetDate');
+  const totalGoal = watchedGoals.reduce((sum, goal) => sum + (Number(goal.amount) || 0), 0);
   
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -129,6 +134,16 @@ export const GoalSettings: FC<GoalSettingsProps> = ({
       targetDate,
     });
   }, [goals, monthlyContribution, targetDate, form]);
+
+  useEffect(() => {
+    if (watchedTargetDate) {
+      const monthsRemaining = differenceInMonths(watchedTargetDate, new Date()) + 1;
+      if (monthsRemaining > 0) {
+        const requiredMonthly = Math.max(0, (totalGoal - currentSavings) / monthsRemaining);
+        form.setValue('monthlyContribution', Math.ceil(requiredMonthly));
+      }
+    }
+  }, [totalGoal, watchedTargetDate, currentSavings, form]);
 
   const onSubmit = (data: GoalFormData) => {
     onUpdate(data);
