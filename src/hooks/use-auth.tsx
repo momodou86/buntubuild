@@ -12,7 +12,7 @@ import {
   onAuthStateChanged,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  signOut as firebaseSignOut,
+  signOut as firebaseSignout,
   updateProfile as firebaseUpdateProfile,
   updatePassword as firebaseUpdatePassword,
   EmailAuthProvider,
@@ -22,12 +22,13 @@ import {
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { setSuperAdminClaim } from '@/app/actions';
+import { createUserProfile } from '@/lib/firestore';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   isSuperAdmin: boolean;
-  signUp: (email: string, pass: string) => Promise<any>;
+  signUp: (email: string, pass: string, fullName: string) => Promise<any>;
   signIn: (email: string, pass: string) => Promise<any>;
   signOut: () => Promise<void>;
   updateProfile: (fullName: string, currentPassword?: string, newPassword?: string) => Promise<void>;
@@ -56,12 +57,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, []);
 
-  const signUp = async (email: string, pass: string) => {
+  const signUp = async (email: string, pass: string, fullName: string) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
     if (userCredential.user) {
+      await firebaseUpdateProfile(userCredential.user, { displayName: fullName });
+      await createUserProfile(userCredential.user.uid, email, fullName);
       await setSuperAdminClaim(userCredential.user.uid);
        // Force refresh of the token to get new custom claims
       await userCredential.user.getIdToken(true);
+      // Update local user object
+      setUser(auth.currentUser);
     }
     return userCredential;
   };
@@ -71,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    await firebaseSignOut(auth);
+    await firebaseSignout(auth);
     setUser(null);
     router.push('/signin');
   };

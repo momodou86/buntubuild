@@ -6,6 +6,8 @@ import {
   type SuggestOptimalContributionOutput,
 } from '@/ai/flows/suggest-optimal-contributions';
 import { adminAuth } from '@/lib/firebase-admin';
+import { addTransaction, updateUserGoals } from '@/lib/firestore';
+import type { Transaction } from '@/lib/firestore';
 import { z } from 'zod';
 
 const inputSchema = z.object({
@@ -52,4 +54,12 @@ export async function setSuperAdminClaim(uid: string): Promise<{ success: boolea
     console.error('Error setting super admin claim:', error);
     return { success: false, message: error.message };
   }
+}
+
+export async function handleGoalUpdateAction(uid: string, data: any) {
+    await updateUserGoals(uid, data);
+}
+
+export async function addTransactionAction(uid: string, transaction: Transaction) {
+    await addTransaction(uid, transaction);
 }

@@ -49,6 +49,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { Currency } from './dashboard';
 import React, { type FC, useState, useCallback } from 'react';
 import { ScrollArea } from '../ui/scroll-area';
+import type { Transaction } from '@/lib/firestore';
 
 
 const milestones = [
@@ -58,16 +59,9 @@ const milestones = [
   { name: 'Roofing Materials', completed: false, amount: 400000, ready: false },
 ];
 
-const auditLog = [
-    { id: 'TXN-A4B1C2', type: 'DEPOSIT', description: 'Monthly Contribution', amount: 75000, date: '2024-07-01' },
-    { id: 'TXN-D3E2F1', type: 'RELEASE', description: 'Land Title Verification', amount: -250000, date: '2024-06-20' },
-    { id: 'TXN-G9H8I7', type: 'DEPOSIT', description: 'Top-up from Awa Njie', amount: 50000, date: '2024-06-15' },
-    { id: 'TXN-J6K5L4', type: 'RELEASE', description: 'Foundation Materials', amount: -500000, date: '2024-06-05' },
-    { id: 'TXN-M1N0P9', type: 'DEPOSIT', description: 'Initial Deposit', amount: 1185000, date: '2024-05-01' },
-]
-
 interface EscrowAccountProps {
   currency: Currency;
+  transactions: Transaction[];
 }
 
 const FileUploadArea: FC<{ onFilesChange: (files: File[]) => void, files: File[] }> = ({ onFilesChange, files }) => {
@@ -171,7 +165,7 @@ const FileUploadArea: FC<{ onFilesChange: (files: File[]) => void, files: File[]
 };
 
 
-export const EscrowAccount: FC<EscrowAccountProps> = ({ currency }) => {
+export const EscrowAccount: FC<EscrowAccountProps> = ({ currency, transactions }) => {
   const { toast } = useToast();
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const [isLocked, setIsLocked] = useState(true);
@@ -186,8 +180,8 @@ export const EscrowAccount: FC<EscrowAccountProps> = ({ currency }) => {
 
   const handleDownloadStatement = () => {
     const csvHeader = "Date,Description,Amount,Currency,Type,Reference ID\n";
-    const csvRows = auditLog.map(log => 
-      `${log.date},"${log.description}",${log.amount},${currency},${log.type},${log.id}`
+    const csvRows = transactions.map(log => 
+      `${log.date.toISOString().split('T')[0]},"${log.description}",${log.amount},${currency},${log.type},${log.id}`
     );
     const csvContent = csvHeader + csvRows.join("\n");
 
@@ -347,7 +341,7 @@ export const EscrowAccount: FC<EscrowAccountProps> = ({ currency }) => {
           </div>
            <ScrollArea className="h-48 rounded-md border">
             <div className="p-3 space-y-3">
-                {auditLog.map((log) => (
+                {transactions.map((log) => (
                     <div key={log.id} className="flex items-center justify-between text-sm">
                         <div>
                             <p className="font-medium">{log.description}</p>

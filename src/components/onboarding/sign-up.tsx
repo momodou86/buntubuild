@@ -217,7 +217,7 @@ export function SignUp() {
   const onSubmit = async (data: SignUpFormData) => {
     setError(null);
     try {
-      await signUp(data.email, data.password);
+      await signUp(data.email, data.password, data.fullName);
       console.log('Form Submitted', data);
       toast({
           title: 'Account Creation Successful!',
@@ -231,6 +231,7 @@ export function SignUp() {
         message = 'This email address is already in use. Please try another one.';
       }
       setError(message);
+      setCurrentStep(0);
     }
   };
 
