@@ -1,9 +1,9 @@
-import { Dashboard } from "@/components/dashboard/dashboard";
+import { SignUp } from "@/components/onboarding/sign-up";
 
 export default function Home() {
   return (
     <main>
-      <Dashboard />
+      <SignUp />
     </main>
   );
 }
