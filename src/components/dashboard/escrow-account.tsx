@@ -1,3 +1,6 @@
+
+'use client';
+
 import {
   Card,
   CardContent,
@@ -17,7 +20,7 @@ import {
   Lock,
   Info,
   History,
-  ArrowRight,
+  Download,
 } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
@@ -29,6 +32,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '../ui/tooltip';
+import { useToast } from '@/hooks/use-toast';
 
 const milestones = [
   { name: 'Land Title Verification', completed: true, amount: 250000 },
@@ -38,18 +42,24 @@ const milestones = [
 ];
 
 const auditLog = [
-    { type: 'DEPOSIT', description: 'Monthly Contribution', amount: 75000, date: '2024-07-01' },
-    { type: 'RELEASE', description: 'Land Title Verification', amount: -250000, date: '2024-06-20' },
-    { type: 'DEPOSIT', description: 'Top-up from Awa Njie', amount: 50000, date: '2024-06-15' },
-    { type: 'RELEASE', description: 'Foundation Materials', amount: -500000, date: '2024-06-05' },
-    { type: 'DEPOSIT', description: 'Initial Deposit', amount: 1185000, date: '2024-05-01' },
+    { id: 'TXN-A4B1C2', type: 'DEPOSIT', description: 'Monthly Contribution', amount: 75000, date: '2024-07-01' },
+    { id: 'TXN-D3E2F1', type: 'RELEASE', description: 'Land Title Verification', amount: -250000, date: '2024-06-20' },
+    { id: 'TXN-G9H8I7', type: 'DEPOSIT', description: 'Top-up from Awa Njie', amount: 50000, date: '2024-06-15' },
+    { id: 'TXN-J6K5L4', type: 'RELEASE', description: 'Foundation Materials', amount: -500000, date: '2024-06-05' },
+    { id: 'TXN-M1N0P9', type: 'DEPOSIT', description: 'Initial Deposit', amount: 1185000, date: '2024-05-01' },
 ]
 
 export function EscrowAccount() {
-  const escrowTotal = milestones
-    .filter((m) => m.completed)
-    .reduce((sum, m) => sum + m.amount, 0);
   const isLocked = true;
+  const { toast } = useToast();
+
+  const handleDownloadStatement = () => {
+    toast({
+        title: 'Statement Generated',
+        description: 'Your transaction statement has been downloaded.',
+        className: 'bg-primary text-primary-foreground',
+    });
+  }
 
   return (
     <Card className="shadow-lg rounded-xl">
@@ -140,18 +150,26 @@ export function EscrowAccount() {
         </div>
         <Separator />
          <div>
-          <h4 className="text-md font-semibold mb-3 flex items-center gap-2">
-            <History className="h-5 w-5" />
-            <span>Transaction History</span>
-          </h4>
-           <div className="space-y-3 max-h-48 overflow-y-auto pr-2">
-                {auditLog.map((log, index) => (
-                    <div key={index} className="flex items-center justify-between text-sm">
+          <div className="flex justify-between items-center mb-3">
+            <h4 className="text-md font-semibold flex items-center gap-2">
+                <History className="h-5 w-5" />
+                <span>Transaction Ledger</span>
+            </h4>
+            <Button variant="outline" size="sm" onClick={handleDownloadStatement}>
+                <Download className="mr-2 h-4 w-4" />
+                Download Statement
+            </Button>
+          </div>
+           <div className="space-y-3 max-h-48 overflow-y-auto pr-2 rounded-md border p-3">
+                {auditLog.map((log) => (
+                    <div key={log.id} className="flex items-center justify-between text-sm">
                         <div>
                             <p className="font-medium">{log.description}</p>
-                            <p className="text-xs text-muted-foreground">{new Date(log.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric'})}</p>
+                            <p className="text-xs text-muted-foreground">
+                                {new Date(log.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric'})} &bull; Ref: {log.id}
+                            </p>
                         </div>
-                        <p className={log.amount > 0 ? 'text-primary' : 'text-destructive'}>
+                        <p className={log.amount > 0 ? 'text-primary font-semibold' : 'text-destructive font-semibold'}>
                           {log.amount > 0 ? '+' : ''}{log.amount.toLocaleString()}
                         </p>
                     </div>
@@ -171,3 +189,5 @@ export function EscrowAccount() {
     </Card>
   );
 }
+
+    
