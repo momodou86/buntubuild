@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useCallback, FC } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -35,7 +36,7 @@ import {
 } from '@/components/ui/select';
 import { Logo } from '../logo';
 import { Progress } from '../ui/progress';
-import { User, Lock, Mail, Globe, MoveRight, MoveLeft, Camera } from 'lucide-react';
+import { User, Lock, Mail, Globe, MoveRight, MoveLeft, Camera, Upload, Paperclip, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import Link from 'next/link';
@@ -51,6 +52,7 @@ const step1Schema = z.object({
 const step2Schema = z.object({
   idType: z.string().min(1, 'Please select an ID type.'),
   idNumber: z.string().min(3, 'A valid ID number is required.'),
+  idDocument: z.instanceof(File).refine(file => file.size > 0, "ID document is required."),
 });
 
 const step3Schema = z.object({
@@ -86,6 +88,97 @@ const steps = [
     description: 'Please take a selfie to complete the verification.',
   },
 ];
+
+interface IDUploadProps {
+  onFileChange: (file: File | null) => void;
+  fileName: string | null;
+}
+
+const IDUpload: FC<IDUploadProps> = ({ onFileChange, fileName }) => {
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = useCallback((files: FileList | null) => {
+    if (files && files.length > 0) {
+      onFileChange(files[0]);
+    }
+  }, [onFileChange]);
+
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFileChange(e.dataTransfer.files);
+    }
+  };
+  
+  const openFileDialog = () => {
+    fileInputRef.current?.click();
+  };
+  
+  const removeFile = () => {
+      onFileChange(null);
+  }
+
+  return (
+    <Card className={`bg-muted/50 border-dashed transition-colors ${isDragging ? 'border-primary' : 'border-border'}`}>
+      <CardContent className="pt-6">
+         <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*,application/pdf"
+          className="hidden"
+          onChange={(e) => handleFileChange(e.target.files)}
+        />
+        {!fileName ? (
+          <div
+            className="flex flex-col items-center justify-center space-y-2 text-center cursor-pointer"
+             onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            onClick={openFileDialog}
+          >
+            <Upload className="h-10 w-10 text-muted-foreground" />
+            <h3 className="text-lg font-semibold">Upload Your ID</h3>
+            <p className="text-sm text-muted-foreground">Drag & drop or click to upload a clear picture of your ID document.</p>
+            <Button type="button" variant="outline" className="mt-2 pointer-events-none">
+              Choose File
+            </Button>
+          </div>
+        ) : (
+           <div className="flex items-center justify-between p-2 text-sm bg-background rounded-md">
+              <div className="flex items-center gap-2 overflow-hidden">
+                <Paperclip className="h-4 w-4 flex-shrink-0" />
+                <span className="truncate">{fileName}</span>
+              </div>
+              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={removeFile}>
+                  <X className="h-4 w-4 text-destructive" />
+              </Button>
+            </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
 
 export function SignUp() {
   const router = useRouter();
@@ -272,16 +365,19 @@ export function SignUp() {
                     </FormItem>
                   )}
                 />
-                 <Card className="bg-muted/50 border-dashed">
-                    <CardContent className="pt-6">
-                        <div className="flex flex-col items-center justify-center space-y-2 text-center">
-                            <Camera className="h-10 w-10 text-muted-foreground" />
-                            <h3 className="text-lg font-semibold">Upload Your ID</h3>
-                            <p className="text-sm text-muted-foreground">Drag & drop or click to upload a clear picture of your ID document.</p>
-                            <Button type="button" variant="outline" className="mt-2">Upload Document</Button>
-                        </div>
-                    </CardContent>
-                </Card>
+                <FormField
+                  control={form.control}
+                  name="idDocument"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>ID Document</FormLabel>
+                        <FormControl>
+                          <IDUpload onFileChange={field.onChange} fileName={field.value?.name ?? null} />
+                        </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                 />
               </div>
             );
           case 2:

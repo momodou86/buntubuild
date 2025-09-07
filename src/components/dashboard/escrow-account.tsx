@@ -23,6 +23,7 @@ import {
   Download,
   Upload,
   Paperclip,
+  X,
 } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
@@ -46,7 +47,7 @@ import {
 } from '../ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import type { Currency } from './dashboard';
-import type { FC } from 'react';
+import React, { type FC, useState, useCallback } from 'react';
 
 
 const milestones = [
@@ -68,10 +69,114 @@ interface EscrowAccountProps {
   currency: Currency;
 }
 
+const FileUploadArea: FC<{ onFilesChange: (files: File[]) => void }> = ({ onFilesChange }) => {
+  const [files, setFiles] = useState<File[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (newFiles: FileList | null) => {
+    if (newFiles) {
+      const updatedFiles = [...files, ...Array.from(newFiles)];
+      setFiles(updatedFiles);
+      onFilesChange(updatedFiles);
+    }
+  };
+
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFileChange(e.dataTransfer.files);
+      e.dataTransfer.clearData();
+    }
+  };
+
+  const removeFile = (index: number) => {
+    const updatedFiles = files.filter((_, i) => i !== index);
+    setFiles(updatedFiles);
+    onFilesChange(updatedFiles);
+  };
+
+  const openFileDialog = () => {
+    fileInputRef.current?.click();
+  };
+  
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
+
+  return (
+    <div className="space-y-4">
+      <div
+        className={`p-6 border-2 border-dashed rounded-lg flex flex-col items-center text-center cursor-pointer transition-colors ${isDragging ? 'border-primary bg-primary/10' : 'border-border'}`}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+        onClick={openFileDialog}
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          className="hidden"
+          onChange={(e) => handleFileChange(e.target.files)}
+        />
+        <Upload className="h-10 w-10 text-muted-foreground mb-2" />
+        <p className="font-semibold">Click or drag files to upload</p>
+        <p className="text-sm text-muted-foreground">Max file size: 5MB per file</p>
+      </div>
+      {files.length > 0 && (
+        <div className="space-y-2">
+          <Label>Attached Files:</Label>
+          {files.map((file, index) => (
+            <div key={index} className="flex items-center justify-between p-2 text-sm bg-muted/50 rounded-md">
+              <div className="flex items-center gap-2 overflow-hidden">
+                <Paperclip className="h-4 w-4 flex-shrink-0" />
+                <span className="truncate">{file.name}</span>
+              </div>
+               <div className="flex items-center gap-2">
+                <span className="text-muted-foreground text-xs flex-shrink-0">{formatFileSize(file.size)}</span>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeFile(index)}>
+                  <X className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 
 export const EscrowAccount: FC<EscrowAccountProps> = ({ currency }) => {
   const isLocked = true;
   const { toast } = useToast();
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -192,36 +297,15 @@ export const EscrowAccount: FC<EscrowAccountProps> = ({ currency }) => {
                                 To release {formatCurrency(milestone.amount)}, please upload verification documents (e.g., invoices, photos).
                             </DialogDescription>
                         </DialogHeader>
-                        <div className="py-4 space-y-4">
-                            <div className="p-6 border-2 border-dashed rounded-lg flex flex-col items-center text-center">
-                                <Upload className="h-10 w-10 text-muted-foreground mb-2" />
-                                <p className="font-semibold">Click or drag files to upload</p>
-                                <p className="text-sm text-muted-foreground">Max file size: 5MB per file</p>
-                            </div>
-                             <div className="space-y-2">
-                                <Label>Attached Files:</Label>
-                                <div className="flex items-center justify-between p-2 text-sm bg-muted/50 rounded-md">
-                                    <div className="flex items-center gap-2">
-                                        <Paperclip className="h-4 w-4" />
-                                        <span>contractor_invoice_q3.pdf</span>
-                                    </div>
-                                    <span className="text-muted-foreground">1.2 MB</span>
-                                </div>
-                                <div className="flex items-center justify-between p-2 text-sm bg-muted/50 rounded-md">
-                                    <div className="flex items-center gap-2">
-                                        <Paperclip className="h-4 w-4" />
-                                        <span>foundation_photo_1.jpg</span>
-                                    </div>
-                                    <span className="text-muted-foreground">2.8 MB</span>
-                                </div>
-                            </div>
+                        <div className="py-4">
+                           <FileUploadArea onFilesChange={setAttachedFiles} />
                         </div>
                         <DialogFooter>
                             <DialogClose asChild>
                                 <Button variant="outline">Cancel</Button>
                             </DialogClose>
                             <DialogClose asChild>
-                                <Button onClick={() => handleReleaseRequest(milestone.name)}>Submit for Review</Button>
+                                <Button onClick={() => handleReleaseRequest(milestone.name)} disabled={attachedFiles.length === 0}>Submit for Review</Button>
                             </DialogClose>
                         </DialogFooter>
                     </DialogContent>
