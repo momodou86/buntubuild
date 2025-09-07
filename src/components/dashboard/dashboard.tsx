@@ -10,9 +10,18 @@ import { QuickActions } from '@/components/dashboard/quick-actions';
 import { Achievements } from '@/components/dashboard/achievements';
 import { CommunityFeed } from '@/components/dashboard/community-feed';
 import { EscrowAccount } from './escrow-account';
+import type { Goal } from '@/components/dashboard/goal-settings';
+
+const initialGoals: Goal[] = [
+  { id: 'land', name: 'Land Purchase', amount: 750000 },
+  { id: 'foundation', name: 'Foundation', amount: 500000 },
+  { id: 'structure', name: 'Structure to Roof', amount: 850000 },
+  { id: 'finishing', name: 'Finishing', amount: 400000 },
+];
 
 export function Dashboard() {
-  const [savingsGoal, setSavingsGoal] = useState(2500000); // GMD
+  const [goals, setGoals] = useState<Goal[]>(initialGoals);
+  const savingsGoal = goals.reduce((sum, goal) => sum + goal.amount, 0);
   const [currentSavings, setCurrentSavings] = useState(485000);
   const [monthlyContribution, setMonthlyContribution] = useState(75000);
   const [targetDate, setTargetDate] = useState<Date | undefined>(
@@ -27,11 +36,11 @@ export function Dashboard() {
   const onTrack = projectedSavings >= savingsGoal;
 
   const handleGoalUpdate = (data: {
-    savingsGoal: number;
+    goals: Goal[];
     monthlyContribution: number;
     targetDate?: Date;
   }) => {
-    setSavingsGoal(data.savingsGoal);
+    setGoals(data.goals);
     setMonthlyContribution(data.monthlyContribution);
     setTargetDate(data.targetDate);
   };
@@ -54,12 +63,12 @@ export function Dashboard() {
               targetDate={targetDate}
             />
             <GoalSettings
-              savingsGoal={savingsGoal}
+              goals={goals}
               monthlyContribution={monthlyContribution}
               targetDate={targetDate}
               onUpdate={handleGoalUpdate}
             />
-             <EscrowAccount />
+            <EscrowAccount />
           </div>
           <div className="lg:col-span-1 flex flex-col gap-6 md:gap-8">
             <AiAdvisor
