@@ -99,7 +99,7 @@ export const GoalSettings: FC<GoalSettingsProps> = ({
     name: 'goals',
   });
   
-  const totalGoal = form.watch('goals').reduce((sum, goal) => sum + (goal.amount || 0), 0);
+  const totalGoal = form.watch('goals').reduce((sum, goal) => sum + (Number(goal.amount) || 0), 0);
 
   const onSubmit = (data: GoalFormData) => {
     onUpdate(data);
