@@ -185,6 +185,25 @@ export const EscrowAccount: FC<EscrowAccountProps> = ({ currency }) => {
   };
 
   const handleDownloadStatement = () => {
+    const csvHeader = "Date,Description,Amount,Currency,Type,Reference ID\n";
+    const csvRows = auditLog.map(log => 
+      `${log.date},"${log.description}",${log.amount},${currency},${log.type},${log.id}`
+    );
+    const csvContent = csvHeader + csvRows.join("\n");
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      const statementDate = new Date().toISOString().split('T')[0];
+      link.setAttribute("href", url);
+      link.setAttribute("download", `BuntuBuild-Statement-${statementDate}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
     toast({
         title: 'Statement Generated',
         description: 'Your transaction statement has been downloaded.',
