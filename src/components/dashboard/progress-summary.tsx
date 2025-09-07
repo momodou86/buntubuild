@@ -19,6 +19,7 @@ import {
 import type { ChartConfig } from '@/components/ui/chart';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import type { Currency } from './dashboard';
 
 interface ProgressSummaryProps {
   currentSavings: number;
@@ -26,6 +27,7 @@ interface ProgressSummaryProps {
   monthlyContribution: number;
   onTrack: boolean;
   targetDate?: Date;
+  currency: Currency;
 }
 
 const chartConfig = {
@@ -43,6 +45,7 @@ export const ProgressSummary: FC<ProgressSummaryProps> = ({
   monthlyContribution,
   onTrack,
   targetDate,
+  currency,
 }) => {
   const progress = Math.min((currentSavings / savingsGoal) * 100, 100);
   const chartData = [
@@ -54,17 +57,16 @@ export const ProgressSummary: FC<ProgressSummaryProps> = ({
     },
   ];
 
-  const formattedSavings = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'GMD',
-    maximumFractionDigits: 0,
-  }).format(currentSavings);
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
 
-  const formattedGoal = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'GMD',
-    maximumFractionDigits: 0,
-  }).format(savingsGoal);
+  const formattedSavings = formatCurrency(currentSavings);
+  const formattedGoal = formatCurrency(savingsGoal);
 
   return (
     <Card className="shadow-lg rounded-xl overflow-hidden">

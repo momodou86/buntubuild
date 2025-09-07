@@ -45,6 +45,9 @@ import {
   TooltipTrigger,
 } from '../ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
+import type { Currency } from './dashboard';
+import type { FC } from 'react';
+
 
 const milestones = [
   { name: 'Land Title Verification', completed: true, amount: 250000 },
@@ -61,9 +64,22 @@ const auditLog = [
     { id: 'TXN-M1N0P9', type: 'DEPOSIT', description: 'Initial Deposit', amount: 1185000, date: '2024-05-01' },
 ]
 
-export function EscrowAccount() {
+interface EscrowAccountProps {
+  currency: Currency;
+}
+
+
+export const EscrowAccount: FC<EscrowAccountProps> = ({ currency }) => {
   const isLocked = true;
   const { toast } = useToast();
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
 
   const handleDownloadStatement = () => {
     toast({
@@ -161,7 +177,7 @@ export function EscrowAccount() {
                     {milestone.name}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    GMD {milestone.amount.toLocaleString()}
+                    {formatCurrency(milestone.amount)}
                   </p>
                 </div>
                  {!milestone.completed && (
@@ -173,7 +189,7 @@ export function EscrowAccount() {
                         <DialogHeader>
                             <DialogTitle>Request Fund Release: {milestone.name}</DialogTitle>
                             <DialogDescription>
-                                To release GMD {milestone.amount.toLocaleString()}, please upload verification documents (e.g., invoices, photos).
+                                To release {formatCurrency(milestone.amount)}, please upload verification documents (e.g., invoices, photos).
                             </DialogDescription>
                         </DialogHeader>
                         <div className="py-4 space-y-4">
@@ -237,7 +253,7 @@ export function EscrowAccount() {
                             </p>
                         </div>
                         <p className={log.amount > 0 ? 'text-primary font-semibold' : 'text-destructive font-semibold'}>
-                          {log.amount > 0 ? '+' : ''}{log.amount.toLocaleString()}
+                          {log.amount > 0 ? '+' : ''}{formatCurrency(log.amount)}
                         </p>
                     </div>
                 ))}

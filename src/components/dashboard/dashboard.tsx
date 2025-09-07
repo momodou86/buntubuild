@@ -19,6 +19,8 @@ const initialGoals: Goal[] = [
   { id: 'finishing', name: 'Finishing', amount: 400000 },
 ];
 
+export type Currency = 'GMD' | 'USD' | 'GBP';
+
 export function Dashboard() {
   const [goals, setGoals] = useState<Goal[]>(initialGoals);
   const savingsGoal = goals.reduce((sum, goal) => sum + goal.amount, 0);
@@ -27,10 +29,11 @@ export function Dashboard() {
   const [targetDate, setTargetDate] = useState<Date | undefined>(
     addMonths(new Date(), 30)
   );
+  const [currency, setCurrency] = useState<Currency>('GMD');
 
   const monthsRemaining = targetDate
-    ? differenceInMonths(targetDate, new Date()) + 1
-    : 1;
+    ? differenceInMonths(targetDate, new Date())
+    : 0;
   const projectedSavings =
     currentSavings + monthlyContribution * Math.max(0, monthsRemaining);
   const onTrack = projectedSavings >= savingsGoal;
@@ -51,7 +54,7 @@ export function Dashboard() {
 
   return (
     <div className="flex flex-col min-h-screen bg-background font-body text-foreground">
-      <Header />
+      <Header currency={currency} setCurrency={setCurrency} />
       <main className="flex-1 p-4 md:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto grid gap-6 md:gap-8 grid-cols-1 lg:grid-cols-3">
           <div className="lg:col-span-2 flex flex-col gap-6 md:gap-8">
@@ -61,22 +64,25 @@ export function Dashboard() {
               monthlyContribution={monthlyContribution}
               onTrack={onTrack}
               targetDate={targetDate}
+              currency={currency}
             />
             <GoalSettings
               goals={goals}
               monthlyContribution={monthlyContribution}
               targetDate={targetDate}
               onUpdate={handleGoalUpdate}
+              currency={currency}
             />
-            <EscrowAccount />
+            <EscrowAccount currency={currency} />
           </div>
           <div className="lg:col-span-1 flex flex-col gap-6 md:gap-8">
             <AiAdvisor
               savingsGoal={savingsGoal}
               currentSavings={currentSavings}
               targetDate={targetDate}
+              currency={currency}
             />
-            <QuickActions onTopUp={handleTopUp} />
+            <QuickActions onTopUp={handleTopUp} currency={currency} />
             <Achievements />
             <CommunityFeed />
           </div>

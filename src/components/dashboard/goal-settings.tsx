@@ -26,6 +26,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { DollarSign, Trash2, PlusCircle, RefreshCw, Layers } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import type { Currency } from './dashboard';
 
 const goalItemSchema = z.object({
   id: z.string(),
@@ -37,7 +38,7 @@ const goalSchema = z.object({
   goals: z.array(goalItemSchema),
   monthlyContribution: z.coerce
     .number()
-    .min(1000, 'Monthly contribution must be at least 1,000.'),
+    .min(1, 'Monthly contribution must be a positive number.'),
   targetDate: z.date().optional(),
 });
 
@@ -49,6 +50,7 @@ interface GoalSettingsProps {
   monthlyContribution: number;
   targetDate?: Date;
   onUpdate: (data: GoalFormData) => void;
+  currency: Currency;
 }
 
 const goalTemplates = [
@@ -83,6 +85,7 @@ export const GoalSettings: FC<GoalSettingsProps> = ({
   monthlyContribution,
   targetDate,
   onUpdate,
+  currency,
 }) => {
   const { toast } = useToast();
   const form = useForm<GoalFormData>({
@@ -100,6 +103,14 @@ export const GoalSettings: FC<GoalSettingsProps> = ({
   });
   
   const totalGoal = form.watch('goals').reduce((sum, goal) => sum + (Number(goal.amount) || 0), 0);
+  
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
 
   const onSubmit = (data: GoalFormData) => {
     onUpdate(data);
@@ -146,7 +157,7 @@ export const GoalSettings: FC<GoalSettingsProps> = ({
             </div>
 
             <div className="space-y-4">
-              <FormLabel>Project Cost Breakdown</FormLabel>
+              <FormLabel>Project Cost Breakdown ({currency})</FormLabel>
               {fields.map((field, index) => (
                 <div key={field.id} className="flex items-end gap-2">
                   <FormField
@@ -200,7 +211,7 @@ export const GoalSettings: FC<GoalSettingsProps> = ({
                <div className="flex justify-end items-center gap-4 pt-4 border-t">
                   <span className="text-lg font-semibold">Total Savings Goal:</span>
                   <span className="text-2xl font-bold text-primary">
-                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'GMD', maximumFractionDigits: 0 }).format(totalGoal)}
+                    {formatCurrency(totalGoal)}
                   </span>
                </div>
             </div>
@@ -211,7 +222,7 @@ export const GoalSettings: FC<GoalSettingsProps> = ({
                   name="monthlyContribution"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Automated Monthly Contribution (GMD)</FormLabel>
+                      <FormLabel>Automated Monthly Contribution ({currency})</FormLabel>
                       <div className="relative">
                         <RefreshCw className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <FormControl>

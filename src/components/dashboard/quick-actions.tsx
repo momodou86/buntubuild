@@ -43,15 +43,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import type { Currency } from './dashboard';
 
 const topUpSchema = z.object({
-  amount: z.coerce.number().min(500, 'Top-up must be at least 500.'),
+  amount: z.coerce.number().min(1, 'Top-up must be a positive number.'),
 });
 
 type TopUpFormData = z.infer<typeof topUpSchema>;
 
 interface QuickActionsProps {
   onTopUp: (amount: number) => void;
+  currency: Currency;
 }
 
 const jointMembers = [
@@ -59,18 +61,26 @@ const jointMembers = [
     { name: 'Lamin Touray', avatar: 'https://picsum.photos/id/240/40', dataAiHint: 'man portrait', contribution: 50000, role: 'Viewer' },
 ]
 
-export const QuickActions: FC<QuickActionsProps> = ({ onTopUp }) => {
+export const QuickActions: FC<QuickActionsProps> = ({ onTopUp, currency }) => {
   const { toast } = useToast();
   const form = useForm<TopUpFormData>({
     resolver: zodResolver(topUpSchema),
-    defaultValues: { amount: 5000 },
+    defaultValues: { amount: 1000 },
   });
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
 
   const onSubmit = (data: TopUpFormData) => {
     onTopUp(data.amount);
     toast({
       title: 'Contribution successful!',
-      description: `You've added GMD ${data.amount.toLocaleString()} to your savings.`,
+      description: `You've added ${formatCurrency(data.amount)} to your savings.`,
       className: 'bg-primary text-primary-foreground',
     });
     form.reset();
@@ -88,7 +98,7 @@ export const QuickActions: FC<QuickActionsProps> = ({ onTopUp }) => {
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
-          <h3 className="font-semibold mb-2">Make a Top-up Contribution</h3>
+          <h3 className="font-semibold mb-2">Make a Top-up Contribution ({currency})</h3>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
               <FormField
@@ -147,7 +157,7 @@ export const QuickActions: FC<QuickActionsProps> = ({ onTopUp }) => {
                                 <div>
                                     <p className="font-semibold">{member.name}</p>
                                     <p className="text-sm text-muted-foreground">
-                                        Total: GMD {member.contribution.toLocaleString()}
+                                        Total: {formatCurrency(member.contribution)}
                                     </p>
                                 </div>
                             </div>

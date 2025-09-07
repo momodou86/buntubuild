@@ -27,11 +27,12 @@ import { getAISuggestion } from '@/app/actions';
 import { useState } from 'react';
 import type { SuggestOptimalContributionOutput } from '@/ai/flows/suggest-optimal-contributions';
 import { useToast } from '@/hooks/use-toast';
+import type { Currency } from './dashboard';
 
 const advisorSchema = z.object({
   monthlyIncome: z.coerce
     .number()
-    .min(5000, 'Monthly income must be realistic.'),
+    .min(100, 'Monthly income must be realistic.'),
 });
 
 type AdvisorFormData = z.infer<typeof advisorSchema>;
@@ -40,12 +41,14 @@ interface AiAdvisorProps {
   savingsGoal: number;
   currentSavings: number;
   targetDate?: Date;
+  currency: Currency;
 }
 
 export const AiAdvisor: FC<AiAdvisorProps> = ({
   savingsGoal,
   currentSavings,
   targetDate,
+  currency,
 }) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -87,6 +90,14 @@ export const AiAdvisor: FC<AiAdvisorProps> = ({
       setSuggestion(result.data);
     }
   };
+  
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
 
   return (
     <Card className="shadow-lg rounded-xl">
@@ -111,7 +122,7 @@ export const AiAdvisor: FC<AiAdvisorProps> = ({
               name="monthlyIncome"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Your Monthly Income (GMD)</FormLabel>
+                  <FormLabel>Your Monthly Income ({currency})</FormLabel>
                   <div className="relative">
                     <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <FormControl>
@@ -157,12 +168,8 @@ export const AiAdvisor: FC<AiAdvisorProps> = ({
                 <AlertDescription className="space-y-2">
                   <p className="font-semibold text-lg">
                     Contribute{' '}
-                    {new Intl.NumberFormat('en-US', {
-                      style: 'currency',
-                      currency: 'GMD',
-                      maximumFractionDigits: 0,
-                    }).format(suggestion.suggestedMonthlyContribution)}{' '}
-                    / month
+                    {formatCurrency(suggestion.suggestedMonthlyContribution)}
+                    {' '}/ month
                   </p>
                   <p className="text-sm">{suggestion.reasoning}</p>
                 </AlertDescription>
