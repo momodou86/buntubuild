@@ -9,6 +9,7 @@ import { AiAdvisor } from '@/components/dashboard/ai-advisor';
 import { QuickActions } from '@/components/dashboard/quick-actions';
 import { Achievements } from '@/components/dashboard/achievements';
 import { CommunityFeed } from '@/components/dashboard/community-feed';
+import { EscrowAccount } from './escrow-account';
 
 export function Dashboard() {
   const [savingsGoal, setSavingsGoal] = useState(2500000); // GMD
@@ -58,6 +59,7 @@ export function Dashboard() {
               targetDate={targetDate}
               onUpdate={handleGoalUpdate}
             />
+             <EscrowAccount />
           </div>
           <div className="lg:col-span-1 flex flex-col gap-6 md:gap-8">
             <AiAdvisor
