@@ -1,9 +1,18 @@
+import { Suspense } from 'react';
 import { SignIn } from "@/components/onboarding/sign-in";
 
-export default function SignInPage() {
+function SignInComponent() {
   return (
     <main>
       <SignIn />
     </main>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense>
+      <SignInComponent />
+    </Suspense>
   );
 }
