@@ -37,6 +37,10 @@ export const Header: FC<HeaderProps> = ({ currency, setCurrency }) => {
     await signOut();
     router.push('/signin');
   };
+  
+  const goToSettings = () => {
+    router.push('/dashboard/settings');
+  }
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-card">
@@ -63,7 +67,7 @@ export const Header: FC<HeaderProps> = ({ currency, setCurrency }) => {
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>{user?.email || 'My Account'}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Settings</DropdownMenuItem>
+              <DropdownMenuItem onClick={goToSettings}>Settings</DropdownMenuItem>
               <DropdownMenuItem>Support</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut}>Logout</DropdownMenuItem>
