@@ -37,6 +37,9 @@ import { Logo } from '../logo';
 import { Progress } from '../ui/progress';
 import { User, Lock, Mail, Globe, MoveRight, MoveLeft, Camera } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
+import Link from 'next/link';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
 const step1Schema = z.object({
   fullName: z.string().min(3, 'Full name is required.'),
@@ -87,7 +90,10 @@ const steps = [
 export function SignUp() {
   const router = useRouter();
   const { toast } = useToast();
+  const { signUp } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+
 
   const form = useForm<SignUpFormData>({
     resolver: zodResolver(steps[currentStep]?.schema || z.object({})),
@@ -107,7 +113,7 @@ export function SignUp() {
   const nextStep = async () => {
     const isValid = await form.trigger();
     if (isValid) {
-      setCurrentStep((prev) => Math.min(prev + 1, steps.length));
+      setCurrentStep((prev) => Math.min(prev + 1, steps.length -1));
     }
   };
 
@@ -115,23 +121,39 @@ export function SignUp() {
     setCurrentStep((prev) => Math.max(prev - 1, 0));
   };
 
-  const onSubmit = (data: SignUpFormData) => {
-    console.log('Form Submitted', data);
-    toast({
-        title: 'Account Creation Successful!',
-        description: 'Welcome to BuntuBuild. Redirecting you to your dashboard.',
-        className: 'bg-primary text-primary-foreground',
-      });
-    router.push('/dashboard');
+  const onSubmit = async (data: SignUpFormData) => {
+    setError(null);
+    try {
+      await signUp(data.email, data.password);
+      console.log('Form Submitted', data);
+      toast({
+          title: 'Account Creation Successful!',
+          description: 'Welcome to BuntuBuild. Redirecting you to your dashboard.',
+          className: 'bg-primary text-primary-foreground',
+        });
+      router.push('/dashboard');
+    } catch (err: any) {
+       let message = 'An unexpected error occurred. Please try again.';
+      if (err.code === 'auth/email-already-in-use') {
+        message = 'This email address is already in use. Please try another one.';
+      }
+      setError(message);
+    }
   };
 
-  const progress = ((currentStep + 1) / (steps.length + 1)) * 100;
+  const progress = ((currentStep + 1) / (steps.length)) * 100;
   
   const renderStepContent = () => {
     switch (currentStep) {
       case 0:
         return (
           <div className="space-y-4">
+            {error && (
+              <Alert variant="destructive">
+                <AlertTitle>Sign-up Failed</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
             <FormField
               control={form.control}
               name="fullName"
@@ -312,9 +334,9 @@ export function SignUp() {
                     <Camera className="h-16 w-16 text-muted-foreground/50" />
                     <p className="absolute bottom-4 text-sm text-muted-foreground px-4">Frame your face in the oval and hold still.</p>
                  </div>
-                 <Button type="button">
+                 <Button type="button" onClick={() => form.handleSubmit(onSubmit)()}>
                     <Camera className="mr-2" />
-                    Take Selfie
+                    Take Selfie & Finish
                 </Button>
             </div>
         )
@@ -347,24 +369,38 @@ export function SignUp() {
                 {renderStepContent()}
             </CardContent>
             <CardFooter className="flex justify-between">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={prevStep}
-                disabled={currentStep === 0}
-              >
-                <MoveLeft className="mr-2" />
-                Back
-              </Button>
-
-              {currentStep < steps.length -1 ? (
-                 <Button type="button" onClick={nextStep}>
-                    Next
-                    <MoveRight className="ml-2" />
+               <div>
+                {currentStep === 0 && (
+                   <p className="text-sm text-center text-muted-foreground">
+                    Already have an account?{' '}
+                    <Link href="/signin" className="text-primary hover:underline">
+                      Sign In
+                    </Link>
+                  </p>
+                )}
+               </div>
+              <div className="flex justify-end gap-2 w-full">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={prevStep}
+                  disabled={currentStep === 0}
+                >
+                  <MoveLeft className="mr-2" />
+                  Back
                 </Button>
-              ) : (
-                <Button type="submit">Finish Setup</Button>
-              )}
+
+                {currentStep < steps.length -1 ? (
+                  <Button type="button" onClick={nextStep}>
+                      Next
+                      <MoveRight className="ml-2" />
+                  </Button>
+                ) : (
+                  // The submit is now handled by the selfie button in the last step
+                  // This button could be hidden or be a final submit if selfie step is removed
+                  <div />
+                )}
+              </div>
             </CardFooter>
           </form>
         </Form>
