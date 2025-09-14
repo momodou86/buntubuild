@@ -36,7 +36,7 @@ import {
 } from '@/components/ui/select';
 import { Logo } from '../logo';
 import { Progress } from '../ui/progress';
-import { User, Lock, Mail, Globe, MoveRight, MoveLeft, Camera, Upload, Paperclip, X } from 'lucide-react';
+import { User, Lock, Mail, Globe, MoveRight, MoveLeft, Camera, Upload, Paperclip, X, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import Link from 'next/link';
@@ -188,11 +188,13 @@ export function SignUp() {
   const [error, setError] = useState<string | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const [selfie, setSelfie] = useState<string | null>(null);
 
 
   const form = useForm<SignUpFormData>({
-    resolver: zodResolver(steps[currentStep]?.schema || z.object({})),
+    resolver: zodResolver(combinedSchema),
     defaultValues: {
       fullName: '',
       email: '',
@@ -207,55 +209,61 @@ export function SignUp() {
     mode: 'onChange',
   });
 
+  const getCameraPermission = useCallback(async () => {
+    if (selfie) return; // Don't re-request if selfie is already taken
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      console.error('Camera API not supported.');
+      setHasCameraPermission(false);
+      toast({
+        variant: 'destructive',
+        title: 'Camera Not Supported',
+        description: 'Your browser does not support camera access.',
+      });
+      return;
+    }
+    
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      setHasCameraPermission(true);
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      setHasCameraPermission(false);
+      toast({
+        variant: 'destructive',
+        title: 'Camera Access Denied',
+        description: 'Please enable camera permissions in your browser settings to use this feature.',
+      });
+    }
+  }, [toast, selfie]);
+
   useEffect(() => {
     if (currentStep === 3) {
-      const getCameraPermission = async () => {
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-          console.error('Camera API not supported.');
-          setHasCameraPermission(false);
-          toast({
-            variant: 'destructive',
-            title: 'Camera Not Supported',
-            description: 'Your browser does not support camera access.',
-          });
-          return;
-        }
-        
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-          setHasCameraPermission(true);
-
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream;
-          }
-        } catch (error) {
-          console.error('Error accessing camera:', error);
-          setHasCameraPermission(false);
-          toast({
-            variant: 'destructive',
-            title: 'Camera Access Denied',
-            description: 'Please enable camera permissions in your browser settings to use this feature.',
-          });
-        }
-      };
-
       getCameraPermission();
-      
-      return () => {
-        if(videoRef.current && videoRef.current.srcObject) {
-            const stream = videoRef.current.srcObject as MediaStream;
-            stream.getTracks().forEach(track => track.stop());
-        }
+    }
+    
+    return () => {
+      // Clean up camera stream when component unmounts or step changes
+      if(videoRef.current && videoRef.current.srcObject) {
+          const stream = videoRef.current.srcObject as MediaStream;
+          stream.getTracks().forEach(track => track.stop());
       }
     }
-  }, [currentStep, toast]);
+  }, [currentStep, getCameraPermission]);
 
 
   const nextStep = async () => {
-    const isValid = await form.trigger();
-    if (isValid) {
-      setCurrentStep((prev) => Math.min(prev + 1, steps.length -1));
+    const schemaForStep = steps[currentStep]?.schema;
+    if (schemaForStep) {
+        const fieldsToValidate = Object.keys(schemaForStep.shape) as (keyof SignUpFormData)[];
+        const isValid = await form.trigger(fieldsToValidate);
+        if (!isValid) return;
     }
+    setCurrentStep((prev) => Math.min(prev + 1, steps.length -1));
   };
 
   const prevStep = () => {
@@ -281,9 +289,41 @@ export function SignUp() {
         message = err.message || message;
       }
       setError(message);
+      setSelfie(null); // Reset selfie on error
       setCurrentStep(0);
     }
   };
+
+  const takeSelfie = () => {
+    if (videoRef.current && canvasRef.current) {
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const context = canvas.getContext('2d');
+        if (context) {
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/png');
+            setSelfie(dataUrl);
+
+            // Stop camera stream
+            if (video.srcObject) {
+                const stream = video.srcObject as MediaStream;
+                stream.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+            }
+        }
+    }
+  };
+
+  const retakeSelfie = () => {
+      setSelfie(null);
+      // We need a short delay to allow the state to update before requesting the camera again
+      setTimeout(() => {
+          getCameraPermission();
+      }, 100);
+  };
+
 
   const progress = ((currentStep + 1) / (steps.length)) * 100;
   
@@ -477,10 +517,16 @@ export function SignUp() {
         case 3:
         return (
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
+                <canvas ref={canvasRef} className="hidden" />
                  <div className="relative w-full max-w-xs aspect-square rounded-lg bg-muted overflow-hidden flex items-center justify-center">
-                    <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
-                    {hasCameraPermission === false && <Camera className="h-16 w-16 text-muted-foreground/50" />}
-                    <p className="absolute bottom-4 text-sm text-muted-foreground px-4">Frame your face in the oval and hold still.</p>
+                    {selfie ? (
+                        <img src={selfie} alt="Your selfie" className="w-full h-full object-cover" />
+                    ) : (
+                        <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
+                    )}
+                    
+                    {!selfie && hasCameraPermission === false && <Camera className="h-16 w-16 text-muted-foreground/50" />}
+                    {!selfie && <p className="absolute bottom-4 text-sm text-muted-foreground px-4">Frame your face in the oval and hold still.</p>}
                  </div>
                  {hasCameraPermission === false && (
                     <Alert variant="destructive">
@@ -490,10 +536,23 @@ export function SignUp() {
                       </AlertDescription>
                     </Alert>
                   )}
-                 <Button type="button" onClick={form.handleSubmit(onSubmit)} disabled={!hasCameraPermission}>
-                    <Camera className="mr-2" />
-                    Take Selfie & Finish
-                </Button>
+                 
+                 {selfie ? (
+                     <div className="flex gap-4">
+                        <Button type="button" variant="outline" onClick={retakeSelfie}>
+                            <RefreshCw className="mr-2" />
+                            Retake
+                        </Button>
+                        <Button type="button" onClick={form.handleSubmit(onSubmit)} disabled={form.formState.isSubmitting}>
+                            {form.formState.isSubmitting ? 'Finishing...' : 'Finish Sign Up'}
+                        </Button>
+                     </div>
+                 ) : (
+                    <Button type="button" onClick={takeSelfie} disabled={!hasCameraPermission}>
+                        <Camera className="mr-2" />
+                        Take Selfie
+                    </Button>
+                 )}
             </div>
         )
       default:
@@ -540,7 +599,7 @@ export function SignUp() {
                   type="button"
                   variant="outline"
                   onClick={prevStep}
-                  disabled={currentStep === 0}
+                  disabled={currentStep === 0 || form.formState.isSubmitting}
                 >
                   <MoveLeft className="mr-2" />
                   Back
@@ -552,8 +611,7 @@ export function SignUp() {
                       <MoveRight className="ml-2" />
                   </Button>
                 ) : (
-                  // The submit is now handled by the selfie button in the last step
-                  // This button could be hidden or be a final submit if selfie step is removed
+                  // The submit is now handled by the selfie capture flow
                   <div />
                 )}
               </div>
@@ -564,3 +622,5 @@ export function SignUp() {
     </div>
   );
 }
+
+    
