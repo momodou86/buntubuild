@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (userCredential.user) {
       await firebaseUpdateProfile(userCredential.user, { displayName: fullName });
       await createUserProfile(userCredential.user.uid, email, fullName);
-      await setSuperAdminClaim(userCredential.user.uid);
+      await setSuperAdminClaim(userCredential.user.uid, email);
        // Force refresh of the token to get new custom claims
       await userCredential.user.getIdToken(true);
       // Update local user object

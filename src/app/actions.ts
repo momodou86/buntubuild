@@ -35,21 +35,18 @@ export async function getAISuggestion(
   }
 }
 
-export async function setSuperAdminClaim(uid: string): Promise<{ success: boolean; message?: string }> {
+export async function setSuperAdminClaim(uid: string, email: string): Promise<{ success: boolean; message?: string }> {
   if (!adminAuth) {
     console.log('Admin Auth not initialized, skipping setting claim');
     return { success: true, message: 'Admin Auth not initialized.'}
   }
   try {
-    const { users } = await adminAuth.listUsers(1);
-    if (users.length > 1) {
-      // More than just the newly created user exists, so don't grant admin
-      return { success: true };
+    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+    if (adminEmail && email === adminEmail) {
+        await adminAuth.setCustomUserClaims(uid, { super_admin: true });
+        return { success: true, message: 'Super admin claim set.' };
     }
-
-    // This is the first user, grant super admin role
-    await adminAuth.setCustomUserClaims(uid, { super_admin: true });
-    return { success: true, message: 'Super admin claim set.' };
+    return { success: true, message: 'Not an admin user.' };
   } catch (error: any) {
     console.error('Error setting super admin claim:', error);
     return { success: false, message: error.message };
