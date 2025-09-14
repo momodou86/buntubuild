@@ -200,6 +200,7 @@ export function SignUp() {
       password: '',
       idType: '',
       idNumber: '',
+      idDocument: new File([], ""),
       terms: false,
       privacy: false,
     },
@@ -277,7 +278,7 @@ export function SignUp() {
       if (err.code === 'auth/email-already-in-use') {
         message = 'This email address is already in use. Please try another one.';
       } else {
-        message = err.message;
+        message = err.message || message;
       }
       setError(message);
       setCurrentStep(0);
@@ -489,7 +490,7 @@ export function SignUp() {
                       </AlertDescription>
                     </Alert>
                   )}
-                 <Button type="button" onClick={() => form.handleSubmit(onSubmit)()} disabled={!hasCameraPermission}>
+                 <Button type="button" onClick={form.handleSubmit(onSubmit)} disabled={!hasCameraPermission}>
                     <Camera className="mr-2" />
                     Take Selfie & Finish
                 </Button>
@@ -563,5 +564,3 @@ export function SignUp() {
     </div>
   );
 }
-
-    
