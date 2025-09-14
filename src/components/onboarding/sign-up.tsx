@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef, useCallback, FC } from 'react';
+import { useState, useRef, useCallback, FC, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -187,6 +187,9 @@ export function SignUp() {
   const [currentStep, setCurrentStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+
 
   const form = useForm<SignUpFormData>({
     resolver: zodResolver(steps[currentStep]?.schema || z.object({})),
@@ -202,6 +205,50 @@ export function SignUp() {
     },
     mode: 'onChange',
   });
+
+  useEffect(() => {
+    if (currentStep === 3) {
+      const getCameraPermission = async () => {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          console.error('Camera API not supported.');
+          setHasCameraPermission(false);
+          toast({
+            variant: 'destructive',
+            title: 'Camera Not Supported',
+            description: 'Your browser does not support camera access.',
+          });
+          return;
+        }
+        
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          setHasCameraPermission(true);
+
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+          }
+        } catch (error) {
+          console.error('Error accessing camera:', error);
+          setHasCameraPermission(false);
+          toast({
+            variant: 'destructive',
+            title: 'Camera Access Denied',
+            description: 'Please enable camera permissions in your browser settings to use this feature.',
+          });
+        }
+      };
+
+      getCameraPermission();
+      
+      return () => {
+        if(videoRef.current && videoRef.current.srcObject) {
+            const stream = videoRef.current.srcObject as MediaStream;
+            stream.getTracks().forEach(track => track.stop());
+        }
+      }
+    }
+  }, [currentStep, toast]);
+
 
   const nextStep = async () => {
     const isValid = await form.trigger();
@@ -229,6 +276,8 @@ export function SignUp() {
        let message = 'An unexpected error occurred. Please try again.';
       if (err.code === 'auth/email-already-in-use') {
         message = 'This email address is already in use. Please try another one.';
+      } else {
+        message = err.message;
       }
       setError(message);
       setCurrentStep(0);
@@ -428,10 +477,19 @@ export function SignUp() {
         return (
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
                  <div className="relative w-full max-w-xs aspect-square rounded-lg bg-muted overflow-hidden flex items-center justify-center">
-                    <Camera className="h-16 w-16 text-muted-foreground/50" />
+                    <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
+                    {hasCameraPermission === false && <Camera className="h-16 w-16 text-muted-foreground/50" />}
                     <p className="absolute bottom-4 text-sm text-muted-foreground px-4">Frame your face in the oval and hold still.</p>
                  </div>
-                 <Button type="button" onClick={() => form.handleSubmit(onSubmit)()}>
+                 {hasCameraPermission === false && (
+                    <Alert variant="destructive">
+                      <AlertTitle>Camera Access Required</AlertTitle>
+                      <AlertDescription>
+                        Please allow camera access to use this feature.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                 <Button type="button" onClick={() => form.handleSubmit(onSubmit)()} disabled={!hasCameraPermission}>
                     <Camera className="mr-2" />
                     Take Selfie & Finish
                 </Button>
@@ -505,3 +563,5 @@ export function SignUp() {
     </div>
   );
 }
+
+    
