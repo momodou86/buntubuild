@@ -166,7 +166,11 @@ export function UserManagement({ users: initialUsers }: UserManagementProps) {
                             <Eye className="mr-2" />
                             View Profile
                         </DropdownMenuItem>
-                         <DropdownMenuItem onClick={() => openConfirmationDialog(user)} className={user.disabled ? 'text-green-600 focus:text-green-700' : 'text-destructive focus:text-destructive'}>
+                         <DropdownMenuItem
+                            onClick={() => openConfirmationDialog(user)}
+                            className={user.disabled ? 'text-green-600 focus:text-green-700' : 'text-destructive focus:text-destructive'}
+                            disabled={user.customClaims?.super_admin}
+                          >
                             {user.disabled ? <UserCheck className="mr-2"/> : <UserX className="mr-2"/>}
                             {user.disabled ? 'Enable Account' : 'Disable Account'}
                         </DropdownMenuItem>
