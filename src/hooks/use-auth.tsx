@@ -9,7 +9,6 @@ import {
   type ReactNode,
 } from 'react';
 import {
-  getAuth,
   onAuthStateChanged,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -21,14 +20,13 @@ import {
   type User,
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { useRouter } from 'next/navigation';
 import { setSuperAdminClaim } from '@/app/actions';
 import { createUserProfile } from '@/lib/firestore';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  isSuperAdmin: boolean;
+  isSuperAdmin: boolean; // Note: This will be removed from the context soon
   signUp: (email: string, pass: string, fullName: string) => Promise<any>;
   signIn: (email: string, pass: string) => Promise<any>;
   signOut: () => Promise<void>;
@@ -40,33 +38,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  const router = useRouter();
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false); // This is now legacy, will be removed later
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setLoading(true); // Set loading to true at the start of auth state change
-      if (user) {
-        try {
-          // Force a token refresh to get latest claims on every auth state change.
-          const tokenResult = await user.getIdTokenResult(true);
-          const isAdmin = !!tokenResult.claims.super_admin;
-          
-          // Set all state at once to avoid race conditions
-          setIsSuperAdmin(isAdmin);
-          setUser(user);
-
-        } catch (error) {
-          console.error("Error fetching user token:", error);
-          setIsSuperAdmin(false);
-          setUser(user);
-        }
-      } else {
-        // No user, so reset all state
-        setIsSuperAdmin(false);
-        setUser(null);
-      }
-      setLoading(false); // Set loading to false after all checks are done
+      setUser(user);
+      setLoading(false);
     });
 
     return () => unsubscribe();
@@ -76,24 +53,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
     const newUser = userCredential.user;
     if (newUser) {
-      // 1. Set user's display name
       await firebaseUpdateProfile(newUser, { displayName: fullName });
-      
-      // 2. Create the user profile in Firestore
       await createUserProfile(newUser.uid, email, fullName);
-
-      // 3. Set the custom claim on the server and wait for it to complete
+      // We still set the custom claim for backend/secure rule validation
       await setSuperAdminClaim(newUser.uid, email);
-
-      // 4. Force a token refresh on the client to get the new custom claim
-      // This will also trigger the onAuthStateChanged listener above, which will
-      // correctly set the isSuperAdmin state.
-      await newUser.getIdTokenResult(true);
-
-      // We manually update state here to ensure the UI updates immediately after sign-up
-      // without waiting for the listener to re-fire in all cases.
-      setUser(auth.currentUser);
-      setIsSuperAdmin(email === process.env.NEXT_PUBLIC_ADMIN_EMAIL);
     }
     return userCredential;
   };
@@ -104,7 +67,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     await firebaseSignout(auth);
-    // The onAuthStateChanged listener will handle resetting state.
   };
 
   const updateProfile = async (fullName: string, currentPassword?: string, newPassword?: string) => {
@@ -112,12 +74,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error('No user is signed in.');
     }
 
-    // Update display name
     if (user.displayName !== fullName) {
       await firebaseUpdateProfile(user, { displayName: fullName });
     }
 
-    // Update password if new password is provided
     if (currentPassword && newPassword) {
       if (!user.email) {
           throw new Error("User email is not available.");

@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { FC } from 'react';
@@ -27,10 +28,11 @@ import type { Currency } from './dashboard';
 interface HeaderProps {
     currency: Currency;
     setCurrency: (currency: Currency) => void;
+    isSuperAdmin: boolean;
 }
 
-export const Header: FC<HeaderProps> = ({ currency, setCurrency }) => {
-  const { user, signOut, isSuperAdmin } = useAuth();
+export const Header: FC<HeaderProps> = ({ currency, setCurrency, isSuperAdmin }) => {
+  const { user, signOut } = useAuth();
   const router = useRouter();
 
   const handleSignOut = async () => {

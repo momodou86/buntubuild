@@ -57,6 +57,7 @@ export function Dashboard({ user, profile: initialProfile }: DashboardProps) {
     monthlyContribution,
     targetDate,
     currency,
+    isAdmin,
   } = profile;
 
   const savingsGoal = goals.reduce((sum, goal) => sum + goal.amount, 0);
@@ -111,7 +112,7 @@ export function Dashboard({ user, profile: initialProfile }: DashboardProps) {
 
   return (
     <div className="flex flex-col min-h-screen bg-background font-body text-foreground">
-      <Header currency={currency} setCurrency={handleSetCurrency} />
+      <Header currency={currency} setCurrency={handleSetCurrency} isSuperAdmin={isAdmin} />
       <main className="flex-1 p-4 md:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto grid gap-6 md:gap-8 grid-cols-1 lg:grid-cols-3">
           <div className="lg:col-span-2 flex flex-col gap-6 md:gap-8">

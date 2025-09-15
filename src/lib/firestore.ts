@@ -1,3 +1,4 @@
+
 'use server';
 
 import {
@@ -25,6 +26,7 @@ export interface UserProfile {
   monthlyContribution: number;
   targetDate?: Date;
   goals: Goal[];
+  isAdmin: boolean;
 }
 
 export interface Transaction {
@@ -51,8 +53,10 @@ export async function createUserProfile(
   const docSnap = await getDoc(userRef);
 
   if (!docSnap.exists()) {
-    const newUserProfile: UserProfile = {
-      uid,
+    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+    const isAdmin = adminEmail ? email === adminEmail : false;
+
+    const newUserProfile: Omit<UserProfile, 'uid'> = {
       email,
       displayName,
       currency: 'GMD',
@@ -60,12 +64,13 @@ export async function createUserProfile(
       monthlyContribution: 75000,
       targetDate: new Date(new Date().setMonth(new Date().getMonth() + 30)),
       goals: initialGoals,
+      isAdmin,
     };
     await setDoc(userRef, {
       ...newUserProfile,
       targetDate: Timestamp.fromDate(newUserProfile.targetDate!),
     });
-    return newUserProfile;
+    return { ...newUserProfile, uid };
   }
   return (await getUserProfile(uid))!;
 }
@@ -77,6 +82,7 @@ export async function getUserProfile(uid: string): Promise<UserProfile | null> {
   if (docSnap.exists()) {
     const data = docSnap.data();
     return {
+      uid,
       ...data,
       targetDate: data.targetDate?.toDate(),
     } as UserProfile;
