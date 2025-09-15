@@ -27,7 +27,7 @@ export default function DashboardPage() {
       } else {
         // This case can happen if profile creation failed.
         // Redirecting to signup might be a good way to recover.
-        router.push('/signup');
+        router.push('/');
       }
       setLoading(false);
     }
