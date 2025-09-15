@@ -46,13 +46,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // On initial load or sign-in, force a token refresh to get latest claims
+        // On any auth state change, force a token refresh to get latest claims
         const tokenResult = await user.getIdTokenResult(true);
         setIsSuperAdmin(!!tokenResult.claims.super_admin);
+        setUser(user);
       } else {
         setIsSuperAdmin(false);
+        setUser(null);
       }
-      setUser(user);
       setLoading(false);
     });
 
@@ -76,8 +77,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const tokenResult = await newUser.getIdTokenResult(true);
 
       // 5. Update the user and admin state in the context
-      setUser(auth.currentUser);
       setIsSuperAdmin(!!tokenResult.claims.super_admin);
+      setUser(auth.currentUser);
     }
     return userCredential;
   };
