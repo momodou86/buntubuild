@@ -48,6 +48,7 @@ import { Check, Edit, Shield, User, PlusCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getRoles, createRole, updateRole } from '@/app/actions';
 import type { Role } from '@/lib/firestore-roles';
+import { cn } from '@/lib/utils';
 
 
 const allPermissions = [
@@ -364,3 +365,5 @@ export default function AdminRolesPage() {
     </main>
   );
 }
+
+    
