@@ -6,9 +6,10 @@ import {
   type SuggestOptimalContributionOutput,
 } from '@/ai/flows/suggest-optimal-contributions';
 import { adminAuth } from '@/lib/firebase-admin';
-import { addTransaction, updateUserGoals } from '@/lib/firestore';
+import { addTransaction, createUserProfile, updateUserGoals } from '@/lib/firestore';
 import type { Transaction } from '@/lib/firestore';
 import { z } from 'zod';
+import type { UserRecord } from 'firebase-admin/auth';
 
 const inputSchema = z.object({
   savingsGoal: z.number(),
@@ -36,6 +37,8 @@ export async function getAISuggestion(
 }
 
 export async function setSuperAdminClaim(uid: string, email: string): Promise<{ success: boolean; message?: string }> {
+  // This function is now primarily for backend/rules validation.
+  // The client-side relies on the `isAdmin` flag in Firestore.
   if (!adminAuth) {
     console.log('Admin Auth not initialized, skipping setting claim');
     return { success: true, message: 'Admin Auth not initialized.'}
@@ -59,4 +62,18 @@ export async function handleGoalUpdateAction(uid: string, data: any) {
 
 export async function addTransactionAction(uid: string, transaction: Transaction) {
     await addTransaction(uid, transaction);
+}
+
+export async function getAllUsers(): Promise<{ users?: UserRecord[]; error?: string }> {
+  if (!adminAuth) {
+    console.error('Admin Auth not initialized, cannot fetch users.');
+    return { error: 'Admin service not available.' };
+  }
+  try {
+    const userRecords = await adminAuth.listUsers();
+    return { users: userRecords.users };
+  } catch (error: any) {
+    console.error('Error fetching users:', error);
+    return { error: error.message };
+  }
 }

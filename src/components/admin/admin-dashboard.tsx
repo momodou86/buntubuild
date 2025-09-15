@@ -17,11 +17,10 @@ export function AdminDashboard() {
     router.push(path);
   };
   return (
-    <div className="flex min-h-screen flex-col bg-muted/40">
-      <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
-        <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-      </header>
-      <main className="flex-1 p-4 sm:px-6 sm:py-0">
+      <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+        <div className="flex items-center">
+            <h1 className="text-lg font-semibold md:text-2xl">Dashboard</h1>
+        </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card
             className="cursor-pointer hover:bg-muted"
@@ -104,6 +103,5 @@ export function AdminDashboard() {
           </Card>
         </div>
       </main>
-    </div>
   );
 }

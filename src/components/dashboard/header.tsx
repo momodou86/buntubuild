@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { FC } from 'react';
@@ -72,7 +71,7 @@ export const Header: FC<HeaderProps> = ({ currency, setCurrency, isSuperAdmin })
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>
-                <p>{user?.email || 'My Account'}</p>
+                <p>{user?.displayName || user?.email || 'My Account'}</p>
                 <p className="text-xs text-muted-foreground font-normal">
                   {isSuperAdmin ? 'Administrator' : 'User'}
                 </p>
