@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -104,6 +104,7 @@ export default function AdminRolesPage() {
   const { toast } = useToast();
   const [roles, setRoles] = useState<Role[]>(initialRoles);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingRole, setEditingRole] = useState<Role | null>(null);
 
   const form = useForm<RoleFormData>({
     resolver: zodResolver(roleSchema),
@@ -114,18 +115,53 @@ export default function AdminRolesPage() {
     },
   });
 
+  useEffect(() => {
+    if (isDialogOpen) {
+        if (editingRole) {
+            form.reset({
+                name: editingRole.name,
+                description: editingRole.description,
+                permissions: editingRole.permissions,
+            });
+        } else {
+            form.reset({
+                name: '',
+                description: '',
+                permissions: [],
+            });
+        }
+    }
+  }, [isDialogOpen, editingRole, form]);
+
+
   const onSubmit = (data: RoleFormData) => {
-    // For now, we just add it to the local state.
-    // In a real app, this would be a server action.
-    setRoles([...roles, { ...data, icon: User }]); // Defaulting to user icon for new roles
-    toast({
-        title: 'Role Created',
-        description: `The role "${data.name}" has been successfully created.`,
+    if (editingRole) {
+      // Update existing role
+      setRoles(roles.map(r => r.name === editingRole.name ? { ...editingRole, ...data } : r));
+       toast({
+        title: 'Role Updated',
+        description: `The role "${data.name}" has been successfully updated.`,
         className: 'bg-primary text-primary-foreground',
-    });
-    form.reset();
+      });
+    } else {
+      // Add new role
+      setRoles([...roles, { ...data, icon: User }]); // Defaulting to user icon for new roles
+      toast({
+          title: 'Role Created',
+          description: `The role "${data.name}" has been successfully created.`,
+          className: 'bg-primary text-primary-foreground',
+      });
+    }
+    setEditingRole(null);
     setIsDialogOpen(false);
   };
+
+  const handleOpenDialog = (role: Role | null = null) => {
+    setEditingRole(role);
+    setIsDialogOpen(true);
+  }
+
+  const isCoreRole = (roleName: string) => ['Admin', 'User'].includes(roleName);
 
 
   return (
@@ -134,7 +170,7 @@ export default function AdminRolesPage() {
         <h1 className="text-lg font-semibold md:text-2xl">Roles & Permissions</h1>
          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-                <Button>
+                <Button onClick={() => handleOpenDialog()}>
                     <PlusCircle className="mr-2" />
                     Add New Role
                 </Button>
@@ -143,9 +179,9 @@ export default function AdminRolesPage() {
                  <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)}>
                         <DialogHeader>
-                            <DialogTitle>Create a New Role</DialogTitle>
+                            <DialogTitle>{editingRole ? 'Edit Role' : 'Create a New Role'}</DialogTitle>
                             <DialogDescription>
-                               Define a new role and assign specific permissions.
+                               {editingRole ? `Update the details for the "${editingRole.name}" role.` : 'Define a new role and assign specific permissions.'}
                             </DialogDescription>
                         </DialogHeader>
                         <div className="grid gap-4 py-6">
@@ -156,8 +192,11 @@ export default function AdminRolesPage() {
                                     <FormItem>
                                         <FormLabel>Role Name</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="e.g., Support Agent" {...field} />
+                                            <Input placeholder="e.g., Support Agent" {...field} disabled={editingRole && isCoreRole(editingRole.name)} />
                                         </FormControl>
+                                        {editingRole && isCoreRole(editingRole.name) && (
+                                            <FormDescription>Core role names cannot be changed.</FormDescription>
+                                        )}
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -228,9 +267,9 @@ export default function AdminRolesPage() {
                         </div>
                         <DialogFooter>
                             <DialogClose asChild>
-                                <Button type="button" variant="outline">Cancel</Button>
+                                <Button type="button" variant="outline" onClick={() => setEditingRole(null)}>Cancel</Button>
                             </DialogClose>
-                             <Button type="submit">Create Role</Button>
+                             <Button type="submit">{editingRole ? 'Save Changes' : 'Create Role'}</Button>
                         </DialogFooter>
                     </form>
                 </Form>
@@ -278,7 +317,7 @@ export default function AdminRolesPage() {
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon">
+                    <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(role)}>
                         <Edit className="h-4 w-4" />
                         <span className="sr-only">Edit Role</span>
                     </Button>
