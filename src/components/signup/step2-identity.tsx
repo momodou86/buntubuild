@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { IdUpload } from './id-upload';
-import type { SignUpFormData } from '@/app/signup/page';
+import type { SignUpFormData } from '@/app/page';
 
 export const step2Schema = z.object({
   idType: z.string().min(1, 'Please select an ID type.'),

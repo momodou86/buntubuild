@@ -9,7 +9,7 @@ export default async function AdminPage() {
   const user = auth.currentUser;
 
   if (!user) {
-    redirect('/signin?redirect=/admin');
+    redirect('/admin');
   }
 
   const profile = await getUserProfile(user.uid);

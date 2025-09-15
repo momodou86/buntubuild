@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { User, Mail, Globe, Lock } from 'lucide-react';
-import type { SignUpFormData } from '@/app/signup/page';
+import type { SignUpFormData } from '@/app/page';
 
 export const step1Schema = z.object({
   fullName: z.string().min(3, 'Full name is required.'),

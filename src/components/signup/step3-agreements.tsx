@@ -11,7 +11,7 @@ import {
   FormLabel,
 } from '@/components/ui/form';
 import { Checkbox } from '@/components/ui/checkbox';
-import type { SignUpFormData } from '@/app/signup/page';
+import type { SignUpFormData } from '@/app/page';
 
 export const step3Schema = z.object({
   terms: z.boolean().refine((val) => val === true, {
