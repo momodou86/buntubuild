@@ -1,21 +1,43 @@
+
 'use client';
 
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
 import { Users, Shield, DollarSign, AlertTriangle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-export function AdminDashboard() {
+interface AdminDashboardProps {
+  totalUsers: number;
+  totalVolume: number;
+  pendingReleasesCount: number;
+  rolesCount: number;
+}
+
+export function AdminDashboard({ 
+  totalUsers, 
+  totalVolume,
+  pendingReleasesCount,
+  rolesCount 
+}: AdminDashboardProps) {
   const router = useRouter();
 
   const handleNavigation = (path: string) => {
     router.push(path);
   };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'GMD', // Assuming GMD for dashboard summary
+        notation: 'compact',
+        maximumFractionDigits: 1,
+    }).format(amount);
+  }
+
   return (
       <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
         <div className="flex items-center">
@@ -33,7 +55,7 @@ export function AdminDashboard() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">1,254</div>
+              <div className="text-2xl font-bold">{totalUsers}</div>
               <p className="text-xs text-muted-foreground">
                 Total registered users
               </p>
@@ -50,7 +72,7 @@ export function AdminDashboard() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">D2.5M</div>
+              <div className="text-2xl font-bold">{formatCurrency(totalVolume)}</div>
               <p className="text-xs text-muted-foreground">
                 Total volume this month
               </p>
@@ -67,7 +89,7 @@ export function AdminDashboard() {
               <AlertTriangle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">12</div>
+              <div className="text-2xl font-bold">{pendingReleasesCount}</div>
               <p className="text-xs text-muted-foreground">
                 Awaiting verification
               </p>
@@ -84,7 +106,7 @@ export function AdminDashboard() {
               <Shield className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">3</div>
+              <div className="text-2xl font-bold">{rolesCount}</div>
               <p className="text-xs text-muted-foreground">Active admin roles</p>
             </CardContent>
           </Card>

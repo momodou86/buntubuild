@@ -1,3 +1,4 @@
+
 'use server';
 
 import {
@@ -6,7 +7,7 @@ import {
   type SuggestOptimalContributionOutput,
 } from '@/ai/flows/suggest-optimal-contributions';
 import { adminAuth } from '@/lib/firebase-admin';
-import { addTransaction, createUserProfile, getUserProfile, updateUserGoals } from '@/lib/firestore';
+import { addTransaction, createUserProfile, getUserProfile, updateUserGoals, getTransactions as getUserTransactions } from '@/lib/firestore';
 import type { Transaction } from '@/lib/firestore';
 import { z } from 'zod';
 import type { UserRecord } from 'firebase-admin/auth';
@@ -106,5 +107,26 @@ export async function toggleUserDisabled(uid: string, disabled: boolean): Promis
     } catch (error: any) {
         console.error('Error toggling user status:', error);
         return { success: false, message: error.message };
+    }
+}
+
+export async function getAllTransactions(): Promise<Transaction[]> {
+    if (!adminAuth) {
+        console.error('Admin Auth not initialized, cannot fetch all transactions.');
+        throw new Error('Admin service not available.');
+    }
+    try {
+        const users = await adminAuth.listUsers();
+        const allTransactions: Transaction[] = [];
+
+        for (const user of users.users) {
+            const userTransactions = await getUserTransactions(user.uid);
+            allTransactions.push(...userTransactions);
+        }
+
+        return allTransactions;
+    } catch (error: any) {
+        console.error('Error fetching all transactions:', error);
+        throw new Error(error.message);
     }
 }
