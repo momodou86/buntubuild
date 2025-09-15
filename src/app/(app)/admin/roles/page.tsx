@@ -44,35 +44,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Check, Edit, Shield, User, PlusCircle, LucideIcon } from 'lucide-react';
+import { Check, Edit, Shield, User, PlusCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { getRoles, createRole, updateRole } from '@/app/actions';
+import type { Role } from '@/lib/firestore-roles';
 
-const initialRoles = [
-  {
-    name: 'Admin',
-    description: 'Has full access to all system features, including user management and settings.',
-    icon: Shield,
-    permissions: [
-      'View Dashboard',
-      'Manage Users',
-      'View Transactions',
-      'Approve Releases',
-      'Manage Roles',
-      'Access Settings',
-    ],
-  },
-  {
-    name: 'User',
-    description: 'Standard user with access to their own dashboard and savings goals.',
-    icon: User,
-    permissions: [
-      'View Dashboard',
-      'Manage Own Savings',
-      'Request Fund Releases',
-      'View Own Transactions',
-    ],
-  },
-];
 
 const allPermissions = [
   'View Dashboard',
@@ -93,16 +69,18 @@ const roleSchema = z.object({
 });
 
 type RoleFormData = z.infer<typeof roleSchema>;
-interface Role {
-  name: string;
-  description: string;
-  icon: LucideIcon;
-  permissions: string[];
+
+const getIconForRole = (roleName: string) => {
+    switch (roleName.toLowerCase()) {
+        case 'admin': return Shield;
+        default: return User;
+    }
 }
 
 export default function AdminRolesPage() {
   const { toast } = useToast();
-  const [roles, setRoles] = useState<Role[]>(initialRoles);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
 
@@ -114,6 +92,26 @@ export default function AdminRolesPage() {
       permissions: [],
     },
   });
+  
+  const fetchRoles = async () => {
+    setIsLoading(true);
+    try {
+        const fetchedRoles = await getRoles();
+        setRoles(fetchedRoles);
+    } catch (error) {
+        toast({
+            title: 'Error fetching roles',
+            description: 'Could not load roles from the database.',
+            variant: 'destructive',
+        });
+    } finally {
+        setIsLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    fetchRoles();
+  }, []);
 
   useEffect(() => {
     if (isDialogOpen) {
@@ -134,26 +132,41 @@ export default function AdminRolesPage() {
   }, [isDialogOpen, editingRole, form]);
 
 
-  const onSubmit = (data: RoleFormData) => {
-    if (editingRole) {
-      // Update existing role
-      setRoles(roles.map(r => r.name === editingRole.name ? { ...editingRole, ...data } : r));
-       toast({
-        title: 'Role Updated',
-        description: `The role "${data.name}" has been successfully updated.`,
-        className: 'bg-primary text-primary-foreground',
-      });
-    } else {
-      // Add new role
-      setRoles([...roles, { ...data, icon: User }]); // Defaulting to user icon for new roles
-      toast({
-          title: 'Role Created',
-          description: `The role "${data.name}" has been successfully created.`,
-          className: 'bg-primary text-primary-foreground',
-      });
+  const onSubmit = async (data: RoleFormData) => {
+    form.clearErrors();
+    try {
+        if (editingRole) {
+          await updateRole(editingRole.id, {
+            description: data.description,
+            permissions: data.permissions,
+          });
+          toast({
+            title: 'Role Updated',
+            description: `The role "${data.name}" has been successfully updated.`,
+            className: 'bg-primary text-primary-foreground',
+          });
+        } else {
+          await createRole({ 
+              name: data.name,
+              description: data.description,
+              permissions: data.permissions,
+          });
+          toast({
+              title: 'Role Created',
+              description: `The role "${data.name}" has been successfully created.`,
+              className: 'bg-primary text-primary-foreground',
+          });
+        }
+        await fetchRoles(); // Refetch roles
+        setEditingRole(null);
+        setIsDialogOpen(false);
+    } catch (error: any) {
+         toast({
+            title: 'Operation Failed',
+            description: error.message || 'An unexpected error occurred.',
+            variant: 'destructive',
+        });
     }
-    setEditingRole(null);
-    setIsDialogOpen(false);
   };
 
   const handleOpenDialog = (role: Role | null = null) => {
@@ -164,11 +177,23 @@ export default function AdminRolesPage() {
   const isCoreRole = (roleName: string) => ['Admin', 'User'].includes(roleName);
 
 
+  if (isLoading) {
+    return (
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <p className="text-muted-foreground">Loading Roles...</p>
+        </main>
+    )
+  }
+
   return (
     <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold md:text-2xl">Roles & Permissions</h1>
-         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+         <Dialog open={isDialogOpen} onOpenChange={(open) => {
+             if (!open) setEditingRole(null);
+             setIsDialogOpen(open);
+         }}>
             <DialogTrigger asChild>
                 <Button onClick={() => handleOpenDialog()}>
                     <PlusCircle className="mr-2" />
@@ -192,10 +217,10 @@ export default function AdminRolesPage() {
                                     <FormItem>
                                         <FormLabel>Role Name</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="e.g., Support Agent" {...field} disabled={editingRole && isCoreRole(editingRole.name)} />
+                                            <Input placeholder="e.g., Support Agent" {...field} disabled={!!editingRole} />
                                         </FormControl>
-                                        {editingRole && isCoreRole(editingRole.name) && (
-                                            <FormDescription>Core role names cannot be changed.</FormDescription>
+                                        {editingRole && (
+                                            <FormDescription>Role names cannot be changed.</FormDescription>
                                         )}
                                         <FormMessage />
                                     </FormItem>
@@ -222,7 +247,7 @@ export default function AdminRolesPage() {
                                         <div className="mb-4">
                                             <FormLabel className="text-base">Permissions</FormLabel>
                                             <FormDescription>
-                                                Select the permissions for this role.
+                                                Select the permissions for this role. Core 'Admin' permissions cannot be changed.
                                             </FormDescription>
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
@@ -232,6 +257,7 @@ export default function AdminRolesPage() {
                                                     control={form.control}
                                                     name="permissions"
                                                     render={({ field }) => {
+                                                        const isDisabled = editingRole?.name === 'Admin';
                                                         return (
                                                         <FormItem
                                                             key={permission}
@@ -240,6 +266,7 @@ export default function AdminRolesPage() {
                                                             <FormControl>
                                                             <Checkbox
                                                                 checked={field.value?.includes(permission)}
+                                                                disabled={isDisabled}
                                                                 onCheckedChange={(checked) => {
                                                                 return checked
                                                                     ? field.onChange([...field.value, permission])
@@ -251,7 +278,7 @@ export default function AdminRolesPage() {
                                                                 }}
                                                             />
                                                             </FormControl>
-                                                            <FormLabel className="font-normal">
+                                                            <FormLabel className={cn("font-normal", isDisabled && "text-muted-foreground")}>
                                                                 {permission}
                                                             </FormLabel>
                                                         </FormItem>
@@ -267,9 +294,12 @@ export default function AdminRolesPage() {
                         </div>
                         <DialogFooter>
                             <DialogClose asChild>
-                                <Button type="button" variant="outline" onClick={() => setEditingRole(null)}>Cancel</Button>
+                                <Button type="button" variant="outline">Cancel</Button>
                             </DialogClose>
-                             <Button type="submit">{editingRole ? 'Save Changes' : 'Create Role'}</Button>
+                             <Button type="submit" disabled={form.formState.isSubmitting}>
+                                {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {editingRole ? 'Save Changes' : 'Create Role'}
+                            </Button>
                         </DialogFooter>
                     </form>
                 </Form>
@@ -293,37 +323,40 @@ export default function AdminRolesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {roles.map((role) => (
-                <TableRow key={role.name}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                       <div className="p-2 bg-muted rounded-full">
-                        <role.icon className="h-5 w-5 text-muted-foreground" />
-                       </div>
-                       <div>
-                        <p className="font-medium">{role.name}</p>
-                        <p className="text-sm text-muted-foreground hidden sm:block">{role.description}</p>
-                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-2 max-w-md">
-                        {role.permissions.map(permission => (
-                             <Badge key={permission} variant="secondary" className="font-normal">
-                                <Check className="h-3 w-3 mr-1 text-primary"/>
-                                {permission}
-                            </Badge>
-                        ))}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(role)}>
-                        <Edit className="h-4 w-4" />
-                        <span className="sr-only">Edit Role</span>
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {roles.map((role) => {
+                const Icon = getIconForRole(role.name);
+                return (
+                    <TableRow key={role.id}>
+                    <TableCell>
+                        <div className="flex items-center gap-3">
+                        <div className="p-2 bg-muted rounded-full">
+                            <Icon className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                        <div>
+                            <p className="font-medium">{role.name}</p>
+                            <p className="text-sm text-muted-foreground hidden sm:block">{role.description}</p>
+                        </div>
+                        </div>
+                    </TableCell>
+                    <TableCell>
+                        <div className="flex flex-wrap gap-2 max-w-md">
+                            {role.permissions.map(permission => (
+                                <Badge key={permission} variant="secondary" className="font-normal">
+                                    <Check className="h-3 w-3 mr-1 text-primary"/>
+                                    {permission}
+                                </Badge>
+                            ))}
+                        </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(role)}>
+                            <Edit className="h-4 w-4" />
+                            <span className="sr-only">Edit Role</span>
+                        </Button>
+                    </TableCell>
+                    </TableRow>
+                )
+            })}
             </TableBody>
           </Table>
         </CardContent>

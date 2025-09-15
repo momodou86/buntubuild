@@ -9,6 +9,12 @@ import {
 import { adminAuth } from '@/lib/firebase-admin';
 import { addTransaction, createUserProfile, getUserProfile, updateUserGoals, getTransactions as getUserTransactions } from '@/lib/firestore';
 import type { Transaction } from '@/lib/firestore';
+import {
+  createRole as createRoleInFirestore,
+  getRoles as getRolesFromFirestore,
+  updateRole as updateRoleInFirestore,
+  type Role,
+} from '@/lib/firestore-roles';
 import { z } from 'zod';
 import type { UserRecord } from 'firebase-admin/auth';
 import { revalidatePath } from 'next/cache';
@@ -129,4 +135,19 @@ export async function getAllTransactions(): Promise<Transaction[]> {
         console.error('Error fetching all transactions:', error);
         throw new Error(error.message);
     }
+}
+
+export async function getRoles(): Promise<Role[]> {
+  return await getRolesFromFirestore();
+}
+
+export async function createRole(role: Omit<Role, 'id'>): Promise<Role> {
+  const newRole = await createRoleInFirestore(role);
+  revalidatePath('/admin/roles');
+  return newRole;
+}
+
+export async function updateRole(id: string, role: Omit<Role, 'id' | 'name'>): Promise<void> {
+  await updateRoleInFirestore(id, role);
+  revalidatePath('/admin/roles');
 }
