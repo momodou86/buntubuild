@@ -67,6 +67,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await userCredential.user.getIdToken(true);
       // Update local user object
       setUser(auth.currentUser);
+       if (auth.currentUser) {
+        const tokenResult = await auth.currentUser.getIdTokenResult(true);
+        setIsSuperAdmin(!!tokenResult.claims.super_admin);
+      }
     }
     return userCredential;
   };
