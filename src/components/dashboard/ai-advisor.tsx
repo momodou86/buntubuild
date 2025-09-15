@@ -85,19 +85,18 @@ export const AiAdvisor: FC<AiAdvisorProps> = ({
     setError(null);
     setSuggestion(null);
 
-    const result = await getAISuggestion({
-      ...data,
-      savingsGoal,
-      currentSavings,
-      targetBuildDate: targetDate.toISOString(),
-    });
-
-    setIsLoading(false);
-
-    if (result.error) {
-      setError(result.error);
-    } else if (result.data) {
-      setSuggestion(result.data);
+    try {
+      const result = await getAISuggestion({
+        ...data,
+        savingsGoal,
+        currentSavings,
+        targetBuildDate: targetDate.toISOString(),
+      });
+       setSuggestion(result);
+    } catch (e: any) {
+       setError(e.message);
+    } finally {
+      setIsLoading(false);
     }
   };
   

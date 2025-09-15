@@ -21,18 +21,18 @@ const inputSchema = z.object({
 
 export async function getAISuggestion(
   input: SuggestOptimalContributionInput
-): Promise<{ data?: SuggestOptimalContributionOutput; error?: string }> {
+): Promise<SuggestOptimalContributionOutput> {
   const parsedInput = inputSchema.safeParse(input);
   if (!parsedInput.success) {
-    return { error: 'Invalid input.' };
+    throw new Error('Invalid input.');
   }
 
   try {
     const result = await suggestOptimalContribution(parsedInput.data);
-    return { data: result };
+    return result;
   } catch (error) {
     console.error('Error getting AI suggestion:', error);
-    return { error: 'Failed to get suggestion from AI. Please try again later.' };
+    throw new Error('Failed to get suggestion from AI. Please try again later.');
   }
 }
 
@@ -41,6 +41,7 @@ export async function setSuperAdminClaim(uid: string, email: string): Promise<{ 
   // The client-side relies on the `isAdmin` flag in Firestore.
   if (!adminAuth) {
     console.log('Admin Auth not initialized, skipping setting claim');
+    // We don't throw here because this is not a critical failure during sign-up.
     return { success: true, message: 'Admin Auth not initialized.'}
   }
   try {
@@ -52,6 +53,7 @@ export async function setSuperAdminClaim(uid: string, email: string): Promise<{ 
     return { success: true, message: 'Not an admin user.' };
   } catch (error: any) {
     console.error('Error setting super admin claim:', error);
+    // We don't want to block sign-up if this fails.
     return { success: false, message: error.message };
   }
 }
