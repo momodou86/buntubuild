@@ -46,7 +46,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
       if (user) {
-        const tokenResult = await user.getIdTokenResult();
+        // Force a token refresh to get the latest custom claims.
+        const tokenResult = await user.getIdTokenResult(true);
         setIsSuperAdmin(!!tokenResult.claims.super_admin);
       } else {
         setIsSuperAdmin(false);
@@ -64,13 +65,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await createUserProfile(userCredential.user.uid, email, fullName);
       await setSuperAdminClaim(userCredential.user.uid, email);
        // Force refresh of the token to get new custom claims
-      await userCredential.user.getIdToken(true);
-      // Update local user object
+      const tokenResult = await userCredential.user.getIdTokenResult(true);
+      // Update local user object and admin state
       setUser(auth.currentUser);
-       if (auth.currentUser) {
-        const tokenResult = await auth.currentUser.getIdTokenResult(true);
-        setIsSuperAdmin(!!tokenResult.claims.super_admin);
-      }
+      setIsSuperAdmin(!!tokenResult.claims.super_admin);
     }
     return userCredential;
   };
@@ -82,6 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     await firebaseSignout(auth);
     setUser(null);
+    setIsSuperAdmin(false);
     router.push('/signin');
   };
 
