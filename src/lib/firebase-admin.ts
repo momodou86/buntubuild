@@ -1,28 +1,32 @@
 import * as admin from 'firebase-admin';
+import serviceAccount from '../../../service-account.json';
 
 let adminAuth: admin.auth.Auth | undefined;
 
+// The serviceAccount object needs to be cast to the correct type.
+const serviceAccountParams = {
+  type: serviceAccount.type,
+  projectId: serviceAccount.project_id,
+  privateKeyId: serviceAccount.private_key_id,
+  privateKey: serviceAccount.private_key,
+  clientEmail: serviceAccount.client_email,
+  clientId: serviceAccount.client_id,
+  authUri: serviceAccount.auth_uri,
+  tokenUri: serviceAccount.token_uri,
+  authProviderX509CertUrl: serviceAccount.auth_provider_x509_cert_url,
+  clientX509CertUrl: serviceAccount.client_x509_cert_url,
+};
+
+
 if (!admin.apps.length) {
   try {
-    // This is the recommended way for authenticating on a local dev server.
-    // This relies on the GOOGLE_APPLICATION_CREDENTIALS env var.
     admin.initializeApp({
-      credential: admin.credential.applicationDefault(),
+      credential: admin.credential.cert(serviceAccountParams),
     });
     adminAuth = admin.auth();
-    console.log('Firebase Admin SDK initialized successfully via Application Default Credentials.');
+    console.log('Firebase Admin SDK initialized successfully.');
   } catch (error: any) {
     console.error('Firebase admin initialization error:', error.message);
-    if (process.env.NODE_ENV === 'development' && !process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-        console.warn(
-          '\n\n*** FIREBASE ADMIN INIT FAILED ***\n' +
-          'The GOOGLE_APPLICATION_CREDENTIALS environment variable is not set.\n' +
-          'Admin features will be disabled.\n' +
-          'See instructions in /src/app/(app)/admin/users/page.tsx to resolve this.\n'
-        );
-    } else {
-       console.error('Full error object:', JSON.stringify(error, null, 2));
-    }
   }
 } else {
   adminAuth = admin.auth();
