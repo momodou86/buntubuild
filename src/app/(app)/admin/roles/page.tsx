@@ -1,6 +1,10 @@
 
 'use client';
 
+import { useState } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import {
   Card,
   CardContent,
@@ -16,11 +20,34 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Check, Edit, Shield, User } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Check, Edit, Shield, User, PlusCircle, LucideIcon } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
-const roles = [
+const initialRoles = [
   {
     name: 'Admin',
     description: 'Has full access to all system features, including user management and settings.',
@@ -47,12 +74,168 @@ const roles = [
   },
 ];
 
+const allPermissions = [
+  'View Dashboard',
+  'Manage Users',
+  'View Transactions',
+  'Approve Releases',
+  'Manage Roles',
+  'Access Settings',
+  'Manage Own Savings',
+  'Request Fund Releases',
+  'View Own Transactions',
+];
+
+const roleSchema = z.object({
+  name: z.string().min(3, 'Role name must be at least 3 characters.'),
+  description: z.string().min(10, 'Description must be at least 10 characters.'),
+  permissions: z.array(z.string()).min(1, 'At least one permission must be selected.'),
+});
+
+type RoleFormData = z.infer<typeof roleSchema>;
+interface Role {
+  name: string;
+  description: string;
+  icon: LucideIcon;
+  permissions: string[];
+}
+
 export default function AdminRolesPage() {
+  const { toast } = useToast();
+  const [roles, setRoles] = useState<Role[]>(initialRoles);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const form = useForm<RoleFormData>({
+    resolver: zodResolver(roleSchema),
+    defaultValues: {
+      name: '',
+      description: '',
+      permissions: [],
+    },
+  });
+
+  const onSubmit = (data: RoleFormData) => {
+    // For now, we just add it to the local state.
+    // In a real app, this would be a server action.
+    setRoles([...roles, { ...data, icon: User }]); // Defaulting to user icon for new roles
+    toast({
+        title: 'Role Created',
+        description: `The role "${data.name}" has been successfully created.`,
+        className: 'bg-primary text-primary-foreground',
+    });
+    form.reset();
+    setIsDialogOpen(false);
+  };
+
+
   return (
     <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold md:text-2xl">Roles & Permissions</h1>
-        <Button>Add New Role</Button>
+         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+                <Button>
+                    <PlusCircle className="mr-2" />
+                    Add New Role
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+                 <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)}>
+                        <DialogHeader>
+                            <DialogTitle>Create a New Role</DialogTitle>
+                            <DialogDescription>
+                               Define a new role and assign specific permissions.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-6">
+                             <FormField
+                                control={form.control}
+                                name="name"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Role Name</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="e.g., Support Agent" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="description"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Role Description</FormLabel>
+                                        <FormControl>
+                                            <Textarea placeholder="Describe the responsibilities of this role..." {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                             <FormField
+                                control={form.control}
+                                name="permissions"
+                                render={() => (
+                                    <FormItem>
+                                        <div className="mb-4">
+                                            <FormLabel className="text-base">Permissions</FormLabel>
+                                            <FormDescription>
+                                                Select the permissions for this role.
+                                            </FormDescription>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            {allPermissions.map((permission) => (
+                                                <FormField
+                                                    key={permission}
+                                                    control={form.control}
+                                                    name="permissions"
+                                                    render={({ field }) => {
+                                                        return (
+                                                        <FormItem
+                                                            key={permission}
+                                                            className="flex flex-row items-start space-x-3 space-y-0"
+                                                        >
+                                                            <FormControl>
+                                                            <Checkbox
+                                                                checked={field.value?.includes(permission)}
+                                                                onCheckedChange={(checked) => {
+                                                                return checked
+                                                                    ? field.onChange([...field.value, permission])
+                                                                    : field.onChange(
+                                                                        field.value?.filter(
+                                                                        (value) => value !== permission
+                                                                        )
+                                                                    )
+                                                                }}
+                                                            />
+                                                            </FormControl>
+                                                            <FormLabel className="font-normal">
+                                                                {permission}
+                                                            </FormLabel>
+                                                        </FormItem>
+                                                        )
+                                                    }}
+                                                />
+                                            ))}
+                                        </div>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <DialogFooter>
+                            <DialogClose asChild>
+                                <Button type="button" variant="outline">Cancel</Button>
+                            </DialogClose>
+                             <Button type="submit">Create Role</Button>
+                        </DialogFooter>
+                    </form>
+                </Form>
+            </DialogContent>
+         </Dialog>
       </div>
       <Card>
         <CardHeader>
