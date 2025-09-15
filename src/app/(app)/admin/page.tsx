@@ -1,22 +1,10 @@
 'use server';
 
 import { AdminDashboard } from '@/components/admin/admin-dashboard';
-import { auth } from '@/lib/firebase';
-import { getUserProfile } from '@/lib/firestore';
-import { redirect } from 'next/navigation';
 
 export default async function AdminPage() {
-  const user = auth.currentUser;
-
-  if (!user) {
-    redirect('/admin');
-  }
-
-  const profile = await getUserProfile(user.uid);
-
-  if (!profile?.isAdmin) {
-    redirect('/dashboard');
-  }
-
+  // The authentication and admin checks are handled by the layout and client-side
+  // components. Attempting to check auth.currentUser on the server here will
+  // always be null and cause a redirect loop.
   return <AdminDashboard />;
 }
