@@ -40,13 +40,13 @@ export default async function AdminUsersPage() {
                         </Link>
                     </li>
                     <li>
-                      Open the downloaded JSON file. Copy the `project_id`, `client_email`, and the entire `private_key` (including the `-----BEGIN...` and `-----END...` lines).
+                      Copy the entire content of the downloaded JSON file.
                     </li>
                     <li>
-                      Paste these values into the corresponding variables in your `.env` file at the root of the project.
+                      Paste the content into the `service-account.json` file in the root of your project. This file should already exist.
                     </li>
                      <li>
-                      The `FIREBASE_PRIVATE_KEY` value in your `.env` file should be enclosed in double quotes (e.g., `FIREBASE_PRIVATE_KEY="..."`).
+                      Ensure your `.env` file has a `GOOGLE_APPLICATION_CREDENTIALS` variable pointing to this file (e.g., `GOOGLE_APPLICATION_CREDENTIALS=./service-account.json`). This should already be set.
                     </li>
                     <li>Restart your development server completely to apply the changes.</li>
                 </ol>
