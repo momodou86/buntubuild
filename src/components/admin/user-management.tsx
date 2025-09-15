@@ -1,7 +1,7 @@
+
 'use client';
 
 import * as React from 'react';
-import type { UserRecord } from 'firebase-admin/auth';
 import {
   Table,
   TableBody,
@@ -48,21 +48,21 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { toggleUserDisabled } from '@/app/actions';
+import { toggleUserDisabled, type PlainUser } from '@/app/actions';
 
 interface UserManagementProps {
-  users: UserRecord[];
+  users: PlainUser[];
 }
 
 export function UserManagement({ users: initialUsers }: UserManagementProps) {
   const { toast } = useToast();
   const [users, setUsers] = React.useState(initialUsers);
-  const [selectedUser, setSelectedUser] = React.useState<UserRecord | null>(null);
+  const [selectedUser, setSelectedUser] = React.useState<PlainUser | null>(null);
   const [isDisabling, setIsDisabling] = React.useState(false);
   const [isAlertOpen, setIsAlertOpen] = React.useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = React.useState(false);
 
-  const handleToggleDisabled = async (user: UserRecord) => {
+  const handleToggleDisabled = async (user: PlainUser) => {
     setIsDisabling(true);
     const result = await toggleUserDisabled(user.uid, !user.disabled);
     setIsDisabling(false);
@@ -84,12 +84,12 @@ export function UserManagement({ users: initialUsers }: UserManagementProps) {
     }
   };
 
-  const openConfirmationDialog = (user: UserRecord) => {
+  const openConfirmationDialog = (user: PlainUser) => {
     setSelectedUser(user);
     setIsAlertOpen(true);
   };
   
-  const openDetailsDialog = (user: UserRecord) => {
+  const openDetailsDialog = (user: PlainUser) => {
     setSelectedUser(user);
     setIsDetailsOpen(true);
   };

@@ -1,12 +1,12 @@
 import { UserManagement } from "@/components/admin/user-management";
-import { getAllUsers } from "@/app/actions";
+import { getAllUsers, PlainUser } from "@/app/actions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 
 export default async function AdminUsersPage() {
-  let users;
+  let users: PlainUser[] = [];
   let error;
   try {
     users = await getAllUsers();

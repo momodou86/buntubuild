@@ -74,7 +74,22 @@ export async function addTransactionAction(uid: string, transaction: Transaction
     await addTransaction(uid, transaction);
 }
 
-export async function getAllUsers(): Promise<UserRecord[]> {
+// A plain object to be passed from Server to Client Components
+export type PlainUser = {
+  uid: string;
+  email?: string;
+  displayName?: string;
+  photoURL?: string;
+  disabled: boolean;
+  metadata: {
+    creationTime: string;
+    lastSignInTime: string;
+  };
+  customClaims?: { [key: string]: any };
+};
+
+
+export async function getAllUsers(): Promise<PlainUser[]> {
   if (!adminAuth) {
     console.error('Admin Auth not initialized, cannot fetch users.');
     throw new Error('Admin service not available.');
@@ -82,7 +97,7 @@ export async function getAllUsers(): Promise<UserRecord[]> {
   try {
     const userRecords = await adminAuth.listUsers();
     
-    // Enrich users with firestore data
+    // Enrich users with firestore data and convert to plain objects
     const enrichedUsers = await Promise.all(
         userRecords.users.map(async (user) => {
             const profile = await getUserProfile(user.uid);
@@ -91,7 +106,19 @@ export async function getAllUsers(): Promise<UserRecord[]> {
             if (profile) {
                 user.customClaims = { ...user.customClaims, super_admin: profile.isAdmin };
             }
-            return user;
+            // Convert UserRecord to a plain object
+            return {
+              uid: user.uid,
+              email: user.email,
+              displayName: user.displayName,
+              photoURL: user.photoURL,
+              disabled: user.disabled,
+              metadata: {
+                creationTime: user.metadata.creationTime,
+                lastSignInTime: user.metadata.lastSignInTime,
+              },
+              customClaims: user.customClaims,
+            };
         })
     );
 
