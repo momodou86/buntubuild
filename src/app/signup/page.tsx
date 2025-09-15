@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useRef, useCallback, FC, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AnimatePresence, motion } from 'framer-motion';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import { AnimatePresence, motion } from 'framer-motion';
+
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -15,169 +16,50 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Form } from '@/components/ui/form';
 import { Logo } from '@/components/logo';
 import { Progress } from '@/components/ui/progress';
-import { User, Lock, Mail, Globe, MoveRight, MoveLeft, Camera, Upload, Paperclip, X, RefreshCw } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/use-auth';
-import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { MoveRight, MoveLeft } from 'lucide-react';
+import Link from 'next/link';
 
-const step1Schema = z.object({
-  fullName: z.string().min(3, 'Full name is required.'),
-  email: z.string().email('Invalid email address.'),
-  countryOfResidence: z.string().min(1, 'Please select your country.'),
-  password: z.string().min(8, 'Password must be at least 8 characters.'),
-});
+import { useAuth } from '@/hooks/use-auth';
+import { useToast } from '@/hooks/use-toast';
 
-const step2Schema = z.object({
-  idType: z.string().min(1, 'Please select an ID type.'),
-  idNumber: z.string().min(3, 'A valid ID number is required.'),
-  idDocument: z.instanceof(File).refine(file => file.size > 0, "ID document is required."),
-});
-
-const step3Schema = z.object({
-  terms: z.boolean().refine((val) => val === true, {
-    message: 'You must accept the terms and conditions.',
-  }),
-  privacy: z.boolean().refine((val) => val === true, {
-    message: 'You must accept the privacy policy.',
-  }),
-});
+import { Step1Account, step1Schema } from '@/components/signup/step1-account';
+import { Step2Identity, step2Schema } from '@/components/signup/step2-identity';
+import { Step3Agreements, step3Schema } from '@/components/signup/step3-agreements';
+import { Step4FacialVerification } from '@/components/signup/step4-facial-verification';
 
 const combinedSchema = step1Schema.merge(step2Schema).merge(step3Schema);
-type SignUpFormData = z.infer<typeof combinedSchema>;
+export type SignUpFormData = z.infer<typeof combinedSchema>;
+
 
 const steps = [
   {
     title: 'Create Your Account',
     description: 'Start your journey to building your dream home.',
     schema: step1Schema,
+    component: Step1Account,
   },
   {
     title: 'Verify Your Identity (KYC)',
     description: 'We need to verify your identity to secure your account.',
     schema: step2Schema,
+    component: Step2Identity,
   },
   {
     title: 'Agreements',
     description: 'Please review and accept our terms and policies.',
     schema: step3Schema,
+    component: Step3Agreements,
   },
   {
     title: 'Facial Verification',
     description: 'Please take a selfie to complete the verification.',
+    component: Step4FacialVerification,
   },
 ];
-
-interface IDUploadProps {
-  onFileChange: (file: File | null) => void;
-  fileName: string | null;
-}
-
-const IDUpload: FC<IDUploadProps> = ({ onFileChange, fileName }) => {
-  const [isDragging, setIsDragging] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleFileChange = useCallback((files: FileList | null) => {
-    if (files && files.length > 0) {
-      onFileChange(files[0]);
-    }
-  }, [onFileChange]);
-
-  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  };
-
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      handleFileChange(e.dataTransfer.files);
-    }
-  };
-  
-  const openFileDialog = () => {
-    fileInputRef.current?.click();
-  };
-  
-  const removeFile = () => {
-      onFileChange(null);
-  }
-
-  return (
-    <Card className={`bg-muted/50 border-dashed transition-colors ${isDragging ? 'border-primary' : 'border-border'}`}>
-      <CardContent className="pt-6">
-         <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*,application/pdf"
-          className="hidden"
-          onChange={(e) => handleFileChange(e.target.files)}
-        />
-        {!fileName ? (
-          <div
-            className="flex flex-col items-center justify-center space-y-2 text-center cursor-pointer"
-             onDragEnter={handleDragEnter}
-            onDragLeave={handleDragLeave}
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-            onClick={openFileDialog}
-          >
-            <Upload className="h-10 w-10 text-muted-foreground" />
-            <h3 className="text-lg font-semibold">Upload Your ID</h3>
-            <p className="text-sm text-muted-foreground">Drag & drop or click to upload a clear picture of your ID document.</p>
-            <Button type="button" variant="outline" className="mt-2 pointer-events-none">
-              Choose File
-            </Button>
-          </div>
-        ) : (
-           <div className="flex items-center justify-between p-2 text-sm bg-background rounded-md">
-              <div className="flex items-center gap-2 overflow-hidden">
-                <Paperclip className="h-4 w-4 flex-shrink-0" />
-                <span className="truncate">{fileName}</span>
-              </div>
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={removeFile}>
-                  <X className="h-4 w-4 text-destructive" />
-              </Button>
-            </div>
-        )}
-      </CardContent>
-    </Card>
-  )
-}
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -185,12 +67,6 @@ export default function SignUpPage() {
   const { signUp } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
-
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
-  const [selfie, setSelfie] = useState<string | null>(null);
-
 
   const form = useForm<SignUpFormData>({
     resolver: zodResolver(combinedSchema),
@@ -201,68 +77,29 @@ export default function SignUpPage() {
       password: '',
       idType: '',
       idNumber: '',
-      idDocument: new File([], ""),
+      idDocument: undefined,
       terms: false,
       privacy: false,
     },
     mode: 'onChange',
   });
 
-  const getCameraPermission = useCallback(async () => {
-    if (selfie) return; // Don't re-request if selfie is already taken
-
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      console.error('Camera API not supported.');
-      setHasCameraPermission(false);
-      toast({
-        variant: 'destructive',
-        title: 'Camera Not Supported',
-        description: 'Your browser does not support camera access.',
-      });
-      return;
-    }
-    
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      setHasCameraPermission(true);
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
-    } catch (error) {
-      console.error('Error accessing camera:', error);
-      setHasCameraPermission(false);
-      toast({
-        variant: 'destructive',
-        title: 'Camera Access Denied',
-        description: 'Please enable camera permissions in your browser settings to use this feature.',
-      });
-    }
-  }, [toast, selfie]);
-
-  useEffect(() => {
-    if (currentStep === 3) {
-      getCameraPermission();
-    }
-    
-    return () => {
-      // Clean up camera stream when component unmounts or step changes
-      if(videoRef.current && videoRef.current.srcObject) {
-          const stream = videoRef.current.srcObject as MediaStream;
-          stream.getTracks().forEach(track => track.stop());
-      }
-    }
-  }, [currentStep, getCameraPermission]);
-
-
   const nextStep = async () => {
     const schemaForStep = steps[currentStep]?.schema;
     if (schemaForStep) {
-        const fieldsToValidate = Object.keys(schemaForStep.shape) as (keyof SignUpFormData)[];
-        const isValid = await form.trigger(fieldsToValidate);
-        if (!isValid) return;
+      const fieldsToValidate = Object.keys(
+        schemaForStep.shape
+      ) as (keyof SignUpFormData)[];
+      const isValid = await form.trigger(fieldsToValidate);
+      if (!isValid) return;
     }
-    setCurrentStep((prev) => Math.min(prev + 1, steps.length -1));
+
+    if (currentStep === 2) {
+      // Trigger submission before moving to the final step
+      await form.handleSubmit(onSubmit)();
+    } else {
+      setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
+    }
   };
 
   const prevStep = () => {
@@ -274,291 +111,38 @@ export default function SignUpPage() {
     try {
       await signUp(data.email, data.password, data.fullName);
       console.log('Form Submitted', data);
+      
+      // Only show toast and move to next step on success of step 3 submission
       toast({
-          title: 'Account Creation Successful!',
-          description: 'Welcome to BuntuBuild. Redirecting you to your dashboard.',
-          className: 'bg-primary text-primary-foreground',
-        });
-      router.push('/dashboard');
+        title: 'Account Details Submitted!',
+        description: 'Just one more step to verify your identity.',
+        className: 'bg-primary text-primary-foreground',
+      });
+      setCurrentStep((prev) => prev + 1);
+
     } catch (err: any) {
-       let message = 'An unexpected error occurred. Please try again.';
+      let message = 'An unexpected error occurred. Please try again.';
       if (err.code === 'auth/email-already-in-use') {
         message = 'This email address is already in use. Please try another one.';
       } else {
         message = err.message || message;
       }
       setError(message);
-      setSelfie(null); // Reset selfie on error
-      setCurrentStep(0);
+      setCurrentStep(0); // Go back to first step on error
     }
   };
 
-  const takeSelfie = () => {
-    if (videoRef.current && canvasRef.current) {
-        const video = videoRef.current;
-        const canvas = canvasRef.current;
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const context = canvas.getContext('2d');
-        if (context) {
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const dataUrl = canvas.toDataURL('image/png');
-            setSelfie(dataUrl);
-
-            // Stop camera stream
-            if (video.srcObject) {
-                const stream = video.srcObject as MediaStream;
-                stream.getTracks().forEach(track => track.stop());
-                video.srcObject = null;
-            }
-        }
-    }
-  };
-
-  const retakeSelfie = () => {
-      setSelfie(null);
-      // We need a short delay to allow the state to update before requesting the camera again
-      setTimeout(() => {
-          getCameraPermission();
-      }, 100);
-  };
-
+  const onFinalSubmit = () => {
+     toast({
+        title: 'Account Creation Successful!',
+        description: 'Welcome to BuntuBuild. Redirecting you to your dashboard.',
+        className: 'bg-primary text-primary-foreground',
+      });
+    router.push('/dashboard');
+  }
 
   const progress = ((currentStep + 1) / (steps.length)) * 100;
-  
-  const renderStepContent = () => {
-    switch (currentStep) {
-      case 0:
-        return (
-          <div className="space-y-4">
-            {error && (
-              <Alert variant="destructive">
-                <AlertTitle>Sign-up Failed</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-            <FormField
-              control={form.control}
-              name="fullName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Full Name</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input placeholder="e.g., Awa Njie" {...field} className="pl-10" />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email Address</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input placeholder="you@example.com" {...field} className="pl-10" />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <FormField
-              control={form.control}
-              name="countryOfResidence"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Country of Residence</FormLabel>
-                   <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <div className="relative">
-                        <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <SelectTrigger className="pl-10">
-                          <SelectValue placeholder="Select your country" />
-                        </SelectTrigger>
-                      </div>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="uk">United Kingdom</SelectItem>
-                      <SelectItem value="us">United States</SelectItem>
-                      <SelectItem value="de">Germany</SelectItem>
-                       <SelectItem value="es">Spain</SelectItem>
-                       <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input type="password" placeholder="••••••••" {...field} className="pl-10" />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        );
-        case 1:
-            return (
-              <div className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="idType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>ID Document Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select ID Type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="passport">Passport</SelectItem>
-                          <SelectItem value="national_id">National ID Card</SelectItem>
-                          <SelectItem value="drivers_license">Driver's License</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="idNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>ID Number</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter your document number" {...field} />
-                      </FormControl>
-                       <FormDescription>
-                        Please ensure this matches your document exactly.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="idDocument"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>ID Document</FormLabel>
-                        <FormControl>
-                          <IDUpload onFileChange={field.onChange} fileName={field.value?.name ?? null} />
-                        </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                 />
-              </div>
-            );
-          case 2:
-            return (
-                 <div className="space-y-4">
-                    <FormField
-                    control={form.control}
-                    name="terms"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                        <FormControl>
-                            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                        </FormControl>
-                        <div className="space-y-1 leading-none">
-                            <FormLabel>
-                            I agree to the <a href="#" className="underline text-primary">Terms and Conditions</a>.
-                            </FormLabel>
-                            <FormDescription>
-                            This includes our service terms, fees, and escrow agreement.
-                            </FormDescription>
-                        </div>
-                        </FormItem>
-                    )}
-                    />
-                    <FormField
-                    control={form.control}
-                    name="privacy"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                        <FormControl>
-                            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                        </FormControl>
-                        <div className="space-y-1 leading-none">
-                            <FormLabel>
-                            I agree to the <a href="#" className="underline text-primary">Privacy Policy</a>.
-                            </FormLabel>
-                             <FormDescription>
-                                We are committed to protecting your data.
-                            </FormDescription>
-                        </div>
-                        </FormItem>
-                    )}
-                    />
-              </div>
-            )
-        case 3:
-        return (
-            <div className="flex flex-col items-center justify-center space-y-4 text-center">
-                <canvas ref={canvasRef} className="hidden" />
-                 <div className="relative w-full max-w-xs aspect-square rounded-lg bg-muted overflow-hidden flex items-center justify-center">
-                    {selfie ? (
-                        <img src={selfie} alt="Your selfie" className="w-full h-full object-cover" />
-                    ) : (
-                        <video ref={videoRef} className="w-full h-full object-cover" autoPlay muted playsInline />
-                    )}
-                    
-                    {!selfie && hasCameraPermission === false && <Camera className="h-16 w-16 text-muted-foreground/50" />}
-                    {!selfie && <p className="absolute bottom-4 text-sm text-muted-foreground px-4">Frame your face in the oval and hold still.</p>}
-                 </div>
-                 {hasCameraPermission === false && (
-                    <Alert variant="destructive">
-                      <AlertTitle>Camera Access Required</AlertTitle>
-                      <AlertDescription>
-                        Please allow camera access to use this feature.
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                 
-                 {selfie ? (
-                     <div className="flex gap-4">
-                        <Button type="button" variant="outline" onClick={retakeSelfie}>
-                            <RefreshCw className="mr-2" />
-                            Retake
-                        </Button>
-                        <Button type="button" onClick={form.handleSubmit(onSubmit)} disabled={form.formState.isSubmitting}>
-                            {form.formState.isSubmitting ? 'Finishing...' : 'Finish Sign Up'}
-                        </Button>
-                     </div>
-                 ) : (
-                    <Button type="button" onClick={takeSelfie} disabled={!hasCameraPermission}>
-                        <Camera className="mr-2" />
-                        Take Selfie
-                    </Button>
-                 )}
-            </div>
-        )
-      default:
-        return null;
-    }
-  };
-
+  const CurrentStepComponent = steps[currentStep].component;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -579,40 +163,62 @@ export default function SignUpPage() {
                 </CardDescription>
               </div>
             </CardHeader>
+
             <CardContent className="min-h-[350px]">
-                {renderStepContent()}
+              {error && currentStep === 0 && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertTitle>Sign-up Failed</AlertTitle>
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentStep}
+                  initial={{ x: 300, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: -300, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <CurrentStepComponent form={form} onFinalSubmit={onFinalSubmit} />
+                </motion.div>
+              </AnimatePresence>
             </CardContent>
+
             <CardFooter className="flex justify-between">
-               <div>
+              <div>
                 {currentStep === 0 && (
-                   <p className="text-sm text-center text-muted-foreground">
+                  <p className="text-sm text-center text-muted-foreground">
                     Already have an account?{' '}
                     <Link href="/signin" className="text-primary hover:underline">
                       Sign In
                     </Link>
                   </p>
                 )}
-               </div>
+              </div>
               <div className="flex justify-end gap-2 w-full">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={prevStep}
-                  disabled={currentStep === 0 || form.formState.isSubmitting}
-                >
-                  <MoveLeft className="mr-2" />
-                  Back
-                </Button>
+                {currentStep > 0 && currentStep < steps.length - 1 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={prevStep}
+                    disabled={form.formState.isSubmitting}
+                  >
+                    <MoveLeft className="mr-2" />
+                    Back
+                  </Button>
+                )}
 
-                {currentStep < steps.length -1 ? (
+                {currentStep < steps.length - 2 ? (
                   <Button type="button" onClick={nextStep}>
-                      Next
+                    Next
+                    <MoveRight className="ml-2" />
+                  </Button>
+                ) : currentStep === 2 ? (
+                   <Button type="button" onClick={nextStep} disabled={form.formState.isSubmitting}>
+                      {form.formState.isSubmitting ? 'Submitting...' : 'Submit & Continue'}
                       <MoveRight className="ml-2" />
                   </Button>
-                ) : (
-                  // The submit is now handled by the selfie capture flow
-                  <div />
-                )}
+                ) : null}
               </div>
             </CardFooter>
           </form>
