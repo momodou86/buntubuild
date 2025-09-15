@@ -1,9 +1,5 @@
 
 import * as admin from 'firebase-admin';
-import { config } from 'dotenv';
-
-// Ensure .env is loaded
-config();
 
 let adminAuth: admin.auth.Auth | undefined;
 
