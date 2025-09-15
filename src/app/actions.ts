@@ -10,6 +10,7 @@ import { addTransaction, createUserProfile, getUserProfile, updateUserGoals } fr
 import type { Transaction } from '@/lib/firestore';
 import { z } from 'zod';
 import type { UserRecord } from 'firebase-admin/auth';
+import { revalidatePath } from 'next/cache';
 
 const inputSchema = z.object({
   savingsGoal: z.number(),
@@ -92,4 +93,18 @@ export async function getAllUsers(): Promise<UserRecord[]> {
     console.error('Error fetching users:', error);
     throw new Error(error.message);
   }
+}
+
+export async function toggleUserDisabled(uid: string, disabled: boolean): Promise<{ success: boolean; message?: string }> {
+    if (!adminAuth) {
+        throw new Error('Admin service not available.');
+    }
+    try {
+        await adminAuth.updateUser(uid, { disabled: disabled });
+        revalidatePath('/admin/users');
+        return { success: true };
+    } catch (error: any) {
+        console.error('Error toggling user status:', error);
+        return { success: false, message: error.message };
+    }
 }
