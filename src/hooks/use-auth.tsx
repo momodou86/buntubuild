@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -44,14 +45,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setUser(user);
       if (user) {
-        // Force a token refresh to get the latest custom claims.
+        // On initial load or sign-in, force a token refresh to get latest claims
         const tokenResult = await user.getIdTokenResult(true);
         setIsSuperAdmin(!!tokenResult.claims.super_admin);
       } else {
         setIsSuperAdmin(false);
       }
+      setUser(user);
       setLoading(false);
     });
 
@@ -60,13 +61,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = async (email: string, pass: string, fullName: string) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-    if (userCredential.user) {
-      await firebaseUpdateProfile(userCredential.user, { displayName: fullName });
-      await createUserProfile(userCredential.user.uid, email, fullName);
-      await setSuperAdminClaim(userCredential.user.uid, email);
-       // Force refresh of the token to get new custom claims
-      const tokenResult = await userCredential.user.getIdTokenResult(true);
-      // Update local user object and admin state
+    const newUser = userCredential.user;
+    if (newUser) {
+      // 1. Set user's display name
+      await firebaseUpdateProfile(newUser, { displayName: fullName });
+      
+      // 2. Create the user profile in Firestore
+      await createUserProfile(newUser.uid, email, fullName);
+
+      // 3. Set the custom claim on the server and wait for it to complete
+      await setSuperAdminClaim(newUser.uid, email);
+
+      // 4. Force a token refresh on the client to get the new custom claim
+      const tokenResult = await newUser.getIdTokenResult(true);
+
+      // 5. Update the user and admin state in the context
       setUser(auth.currentUser);
       setIsSuperAdmin(!!tokenResult.claims.super_admin);
     }
