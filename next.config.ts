@@ -3,7 +3,9 @@ import type {NextConfig} from 'next';
 require('dotenv').config({ path: './.env' });
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  experimental: {
+    appDir: true,
+  },
   typescript: {
     ignoreBuildErrors: true,
   },
