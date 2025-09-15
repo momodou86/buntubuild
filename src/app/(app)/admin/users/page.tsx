@@ -6,7 +6,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import Link from "next/link";
 
 export default async function AdminUsersPage() {
-  const { users, error } = await getAllUsers();
+  let users;
+  let error;
+  try {
+    users = await getAllUsers();
+  } catch (e: any) {
+    error = e.message;
+  }
+
 
   if (error) {
     return (

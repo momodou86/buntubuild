@@ -64,16 +64,16 @@ export async function addTransactionAction(uid: string, transaction: Transaction
     await addTransaction(uid, transaction);
 }
 
-export async function getAllUsers(): Promise<{ users?: UserRecord[]; error?: string }> {
+export async function getAllUsers(): Promise<UserRecord[]> {
   if (!adminAuth) {
     console.error('Admin Auth not initialized, cannot fetch users.');
-    return { error: 'Admin service not available.' };
+    throw new Error('Admin service not available.');
   }
   try {
     const userRecords = await adminAuth.listUsers();
-    return { users: userRecords.users };
+    return userRecords.users;
   } catch (error: any) {
     console.error('Error fetching users:', error);
-    return { error: error.message };
+    throw new Error(error.message);
   }
 }
