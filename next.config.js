@@ -1,8 +1,8 @@
-import type {NextConfig} from 'next';
+/** @type {import('next').NextConfig} */
 
 require('dotenv').config({ path: './.env' });
 
-const nextConfig: NextConfig = {
+const nextConfig = {
   experimental: {
     appDir: true,
   },
@@ -30,4 +30,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+module.exports = nextConfig;
