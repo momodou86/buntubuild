@@ -6,7 +6,7 @@ import {
   type SuggestOptimalContributionOutput,
 } from '@/ai/flows/suggest-optimal-contributions';
 import { adminAuth } from '@/lib/firebase-admin';
-import { addTransaction, createUserProfile, updateUserGoals } from '@/lib/firestore';
+import { addTransaction, createUserProfile, getUserProfile, updateUserGoals } from '@/lib/firestore';
 import type { Transaction } from '@/lib/firestore';
 import { z } from 'zod';
 import type { UserRecord } from 'firebase-admin/auth';
@@ -73,7 +73,21 @@ export async function getAllUsers(): Promise<UserRecord[]> {
   }
   try {
     const userRecords = await adminAuth.listUsers();
-    return userRecords.users;
+    
+    // Enrich users with firestore data
+    const enrichedUsers = await Promise.all(
+        userRecords.users.map(async (user) => {
+            const profile = await getUserProfile(user.uid);
+            // We'll add the isAdmin flag to the customClaims object for the frontend to use.
+            // This avoids changing the UserRecord type structure extensively.
+            if (profile) {
+                user.customClaims = { ...user.customClaims, super_admin: profile.isAdmin };
+            }
+            return user;
+        })
+    );
+
+    return enrichedUsers;
   } catch (error: any) {
     console.error('Error fetching users:', error);
     throw new Error(error.message);
