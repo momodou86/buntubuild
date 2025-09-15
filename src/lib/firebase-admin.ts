@@ -1,6 +1,3 @@
-
-'use server';
-
 import * as admin from 'firebase-admin';
 
 let adminAuth: admin.auth.Auth | undefined;
