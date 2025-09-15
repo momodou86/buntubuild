@@ -69,7 +69,12 @@ export const Header: FC<HeaderProps> = ({ currency, setCurrency }) => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>{user?.email || 'My Account'}</DropdownMenuLabel>
+              <DropdownMenuLabel>
+                <p>{user?.email || 'My Account'}</p>
+                <p className="text-xs text-muted-foreground font-normal">
+                  {isSuperAdmin ? 'Administrator' : 'User'}
+                </p>
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
               {isSuperAdmin && (
                 <DropdownMenuItem onClick={goToAdmin}>
