@@ -32,19 +32,25 @@ export default async function AdminUsersPage() {
               <AlertDescription>
                 <p>Could not fetch users because the Firebase Admin SDK is not configured correctly. This feature requires service account credentials to be set up.</p>
                 <p className="mt-2">To resolve this, please follow these steps:</p>
-                <ol className="list-decimal list-inside mt-2 space-y-1 text-xs">
+                <ol className="list-decimal list-inside mt-2 space-y-1 text-sm">
                     <li>Generate a new private key for your service account in the Firebase Console:
                         <br />
-                        <Link href="https://console.firebase.google.com/project/_/settings/serviceaccounts/adminsdk" target="_blank" className="text-destructive-foreground underline">
-                            Project settings &gt; Service accounts
+                        <Link href="https://console.firebase.google.com/project/_/settings/serviceaccounts/adminsdk" target="_blank" className="text-primary hover:underline">
+                            Project settings &gt; Service accounts &gt; Generate new private key
                         </Link>
                     </li>
                     <li>
-                      Copy the generated JSON file's contents.
+                      Copy the entire content of the downloaded JSON file.
                     </li>
-                    <li>Update the `.env` file in your project with the `projectId`, `client_email`, and `private_key` from the JSON file.</li>
+                    <li>
+                      Paste the content into the `service-account.json` file in the root of your project.
+                    </li>
+                     <li>
+                      Your `.env` file should have a `GOOGLE_APPLICATION_CREDENTIALS` variable pointing to this new file.
+                    </li>
+                    <li>Restart your development server completely to apply the changes.</li>
                 </ol>
-                <p className="text-xs mt-2">Error details: {error}</p>
+                <p className="text-xs mt-4">Error details: {error}</p>
               </AlertDescription>
             </Alert>
           </CardContent>
