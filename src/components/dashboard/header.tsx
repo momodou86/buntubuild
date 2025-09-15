@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { CircleUser } from 'lucide-react';
+import { CircleUser, Shield } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import type { Currency } from './dashboard';
@@ -30,7 +30,7 @@ interface HeaderProps {
 }
 
 export const Header: FC<HeaderProps> = ({ currency, setCurrency }) => {
-  const { user, signOut } = useAuth();
+  const { user, signOut, isSuperAdmin } = useAuth();
   const router = useRouter();
 
   const handleSignOut = async () => {
@@ -40,6 +40,10 @@ export const Header: FC<HeaderProps> = ({ currency, setCurrency }) => {
   
   const goToSettings = () => {
     router.push('/dashboard/settings');
+  }
+
+  const goToAdmin = () => {
+    router.push('/admin');
   }
 
   return (
@@ -67,6 +71,12 @@ export const Header: FC<HeaderProps> = ({ currency, setCurrency }) => {
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>{user?.email || 'My Account'}</DropdownMenuLabel>
               <DropdownMenuSeparator />
+              {isSuperAdmin && (
+                <DropdownMenuItem onClick={goToAdmin}>
+                  <Shield className="mr-2 h-4 w-4" />
+                  Admin Dashboard
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={goToSettings}>Settings</DropdownMenuItem>
               <DropdownMenuItem>Support</DropdownMenuItem>
               <DropdownMenuSeparator />
