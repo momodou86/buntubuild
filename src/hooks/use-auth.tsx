@@ -45,16 +45,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setLoading(true); // Set loading to true at the start of auth state change
       if (user) {
-        // On any auth state change, force a token refresh to get latest claims
-        const tokenResult = await user.getIdTokenResult(true);
-        setIsSuperAdmin(!!tokenResult.claims.super_admin);
-        setUser(user);
+        try {
+          // Force a token refresh to get latest claims on every auth state change.
+          const tokenResult = await user.getIdTokenResult(true);
+          const isAdmin = !!tokenResult.claims.super_admin;
+          
+          // Set all state at once to avoid race conditions
+          setIsSuperAdmin(isAdmin);
+          setUser(user);
+
+        } catch (error) {
+          console.error("Error fetching user token:", error);
+          setIsSuperAdmin(false);
+          setUser(user);
+        }
       } else {
+        // No user, so reset all state
         setIsSuperAdmin(false);
         setUser(null);
       }
-      setLoading(false);
+      setLoading(false); // Set loading to false after all checks are done
     });
 
     return () => unsubscribe();
@@ -74,11 +86,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await setSuperAdminClaim(newUser.uid, email);
 
       // 4. Force a token refresh on the client to get the new custom claim
-      const tokenResult = await newUser.getIdTokenResult(true);
+      // This will also trigger the onAuthStateChanged listener above, which will
+      // correctly set the isSuperAdmin state.
+      await newUser.getIdTokenResult(true);
 
-      // 5. Update the user and admin state in the context
-      setIsSuperAdmin(!!tokenResult.claims.super_admin);
+      // We manually update state here to ensure the UI updates immediately after sign-up
+      // without waiting for the listener to re-fire in all cases.
       setUser(auth.currentUser);
+      setIsSuperAdmin(email === process.env.NEXT_PUBLIC_ADMIN_EMAIL);
     }
     return userCredential;
   };
@@ -89,9 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     await firebaseSignout(auth);
-    setUser(null);
-    setIsSuperAdmin(false);
-    router.push('/signin');
+    // The onAuthStateChanged listener will handle resetting state.
   };
 
   const updateProfile = async (fullName: string, currentPassword?: string, newPassword?: string) => {
